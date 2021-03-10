@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Material icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons">
+
+    <!--Personal css -->
+    <link href="static/main.css" rel="stylesheet" type="text/css">
+
+    <!-- Boostrap  -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+
+    <!-- openLayer map -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.3.1/css/ol.css" type="text/css">
+
+    <!-- Drawer -->
+    <link rel="stylesheet" href="static/plugins/drawer/bootstrap-drawer.css "/>
+
+    <!-- jQuery UI -->
+    <link rel="stylesheet" href="static/plugins/jQueryUI/css/jquery-ui.css">
+
+    <!--timeline-->
+    <!--<link href="//unpkg.com/vis-timeline@latest/styles/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />-->
+    <link rel="stylesheet" href="static/plugins/gantt/dist/frappe-gantt.css">
+
+
+    <title>SNA</title>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-toggler drawerButton" data-toggle="drawer" data-target="#drawer-demo">
+            <span class="sr-only">Toggle drawer</span>
+            <i class="material-icons">menu</i>
+        </div>
+
+        <div class="d-flex flex-column">
+            <div class="p-2 bd-highlight">
+                <span class="nav-item title">Social Network Analysis</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Drawer -->
+    <div class="drawer drawer-left slide" tabindex="-1" role="dialog" aria-labelledby="drawer-demo-title" aria-hidden="true" id="drawer-demo">
+        <div class="drawer-content drawer-content-scrollable" role="document">
+            <div class="drawer-header">
+                <h4 class="drawer-title" id="drawer-demo-title">Profile settings</h4>
+            </div>
+
+            <div class="drawer-body">
+                <div class="login-item">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="material-icons">mail</i></span>
+                        </div>
+                        <input type="text" class="form-control information userMail" aria-label="Small" placeholder="Insert email">
+                    </div>
+
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="material-icons">vpn_key</i></span>
+                        </div>
+                        <input type="password" autocomplete="new-password" class="form-control information userPassword" aria-label="Small" placeholder="Insert password">
+                    </div>
+
+                    <button  type="submit" class="btn btn-outline-light btn-lg log">Login</button>
+
+                    <div class="d-flex bd-highlight or">
+                        <div class="p-1 flex-grow-1 bd-highlight"><hr></div>
+                        <div class="p-2 bd-highlight">or</div>
+                        <div class="p-1 flex-grow-1 bd-highlight"><hr></div>
+                    </div>
+
+                    <button  type="submit" class="btn btn-outline-light btn-lg register" data-toggle="tooltip" data-placement="bottom" title="Insert a valid email and a valid password, then click register">
+                        Register
+                    </button>
+                </div>
+
+                <div class="drawer-item logged">
+                    Your are logged as <b><span class="username"> </span></b>
+                </div>
+
+                <div class="drawer-item separator"></div>
+
+                <div class="drawer-item">
+                    <div class="upload-dump-title title" data-toggle="collapse" data-target="#upload-dump" aria-expanded="false" aria-controls="upload-dump">
+                        <label>Upload dump</label>
+                        <span class="material-icons">keyboard_arrow_down</span>
+                    </div>
+
+                    <div class="upload-dump collapse" id="upload-dump">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="material-icons">publish</i></span>
+                            </div>
+                            <label for="file-upload" class="custom-file-upload" data-toggle="tooltip" data-placement="top" data-html="true" title="The file <u>must be</u> a <b>zip for facebook and twitter dumps</b> and <b>mbox for emails dumps</b>">Choose file</label>
+                            <input id="file-upload"  name="files[]" type="file" style="display:none;">
+                        </div>
+                        <div class="preLoadWordFrecForm">
+                            <div  data-toggle="tooltip" title="This option allow to preload the TFIDF value for the words in the dataset. If you choose NO, the word frequency will be load at runtime">Preload word frequency:</div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="wordFrecRadioOptions" id="wordFrecRadioButtonYes" value="true">
+                                <label class="form-check-label" for="wordFrecRadioButtonYes">Yes</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="wordFrecRadioOptions" id="wordFrecRadioButtonNo" value="false" checked>
+                                <label class="form-check-label" for="wordFrecRadioButtonNo">No</label>
+                            </div>
+                        </div>
+                        <div class="upload-alert" style="display:none; height: 30px; color:#f5f5f5ff;font-size:9px; text-align:center; margin-bottom:20px; ">
+                            <div class="progress">
+
+                            </div>
+                            <div class="upload-alert-msg">
+
+                            </div>
+                        </div>
+                        <button  type="submit" class="btn btn-outline-light btn-lg uploadDump">Upload file</button>
+                    </div>
+                </div>
+
+                <div class="drawer-item">
+                    <div class="manage-dump-title title" data-toggle="collapse" data-target="#manage-dumps-settings" aria-expanded="false" aria-controls="manage-dumps-settings">
+                        <label>Delete your dumps</label>
+                        <span class="material-icons">keyboard_arrow_down</span>
+                    </div>
+
+                    <div class="manage-dumps-settings collapse" id="manage-dumps-settings">
+                        <div class="input-group form-check">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">
+                                    <input  class="form-check-input" type="radio" name="social-to-delete" value="facebook">
+                                </div>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Facebook" value="Facebook" >
+                            <div class="input-group-prepend delete-dump facebook">
+                                <div class="input-group-text">
+                                    <span class="material-icons">delete_forever</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group form-check">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">
+                                    <input  class="form-check-input" type="radio" name="social-to-delete" value="twitter">
+                                </div>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Twitter" value="Twitter">
+                            <div class="input-group-prepend delete-dump twitter">
+                                <div class="input-group-text">
+                                    <span class="material-icons">delete_forever</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group form-check">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">
+                                    <input  class="form-check-input" type="radio" name="social-to-delete" value="mbox">
+                                </div>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Mailbox" value="Mailbox">
+                            <div class="input-group-prepend delete-dump mbox">
+                                <div class="input-group-text">
+                                    <span class="material-icons">delete_forever</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group form-check">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">
+                                    <input  class="form-check-input" type="radio" name="social-to-delete" value="all">
+                                </div>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Delete all" value="Delete all">
+                            <div class="input-group-prepend delete-dump all">
+                                <div class="input-group-text">
+                                    <span class="material-icons">delete_forever</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="drawer-item">
+                    <div class="manage-account-title title" data-toggle="collapse" data-target="#manage-account-settings" aria-expanded="false" aria-controls="manage-account-settings">
+                        <label>Settings</label>
+                        <span class="material-icons">keyboard_arrow_down</span>
+                    </div>
+
+                    <div class="manage-account-settings collapse" id="manage-account-settings">
+                        <div class="manage-mail-title title" data-toggle="collapse" data-target="#manage-mail-settings" aria-expanded="false" aria-controls="manage-mail-settings">
+                            <label>Change your email</label>
+                            <span class="material-icons">keyboard_arrow_down</span>
+                        </div>
+
+                        <div class="manage-mail-settings collapse" id="manage-mail-settings">
+                            <div class="input-group input-group-sm mb-3">
+                                <input type="text" class="form-control new-mail" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm" placeholder="Insert new email">
+                            </div>
+                            <div class="input-group input-group-sm mb-3">
+                                <input type="text" class="form-control new-mail-re" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm" placeholder="Retype new email">
+                            </div>
+                            <button type="button" class="btn btn-outline-light btn-sm change">Change</button>
+                        </div>
+
+                        <div class="manage-password-title title" data-toggle="collapse" data-target="#manage-password-settings" aria-expanded="false" aria-controls="manage-password-settings">
+                            <label>Change your password</label>
+                            <span class="material-icons">keyboard_arrow_down</span>
+                        </div>
+
+                        <div class="manage-password-settings collapse" id="manage-password-settings">
+                            <div class="input-group input-group-sm mb-3">
+                                <input type="password" class="form-control new-pass" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm" placeholder="Insert new password">
+                            </div>
+                            <div class="input-group input-group-sm mb-3">
+                                <input type="password" class="form-control new-pass-re" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm" placeholder="Retype new password">
+                            </div>
+                            <button type="button" class="btn btn-outline-light btn-sm change">Change</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="drawer-footer">
+                <div class="app-help">
+                    <button type="button" class="btn-help btn btn-light btn-sm" data-toggle="modal" data-target="#exampleModal">Help</button>
+                </div>
+                <div class="drawer-item separator"></div>
+                <button  type="submit" class="btn btn-outline-danger btn-lg drawer-item logout">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Help</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    This tool will drive you through a forensic data analysis of yours <b>facebook, twitter and mbox dumps</b>.
+                    <br/>
+                    If you haven't done it yet, you'll need to upload the social network dump for analysis.
+                    <br/>
+                    Once you have uploaded the dump and the data has been processed you can interact with the four tabs in the main section which correspond to the four ways you can analyze the data. 
+                    <br/>
+                    <br/>
+                    In the first two panels, different colors of the nodes represent different types of data represented. This nodes can be filtered in the menu at the top of the main section of the application 
+                    <br/>
+                    <br/>
+                    <div class='row'>
+                        <div class="col-lg-3 col-md-6">
+                            <b style="text-align: center;">Relationships network</b>
+                            <br/>
+                            <br/>
+                            <p style="font-size: x-small; text-align: justify;">
+                                The relathionship graph shows how the people are added and tagged by dump's owner in a selected range of time.
+                                The node size depends on how many times a person is tagged.
+                                The bigger the node is, more times the person is tagged.
+                                The link between two people depends on how many times they are tagged together.
+                                The bigger the link is, more times they are tagged together.
+                            </p>
+                        </div>
+                        <div class="col-lg-3 col-md-6" style="text-align: center;">
+                            <b>Messages traffic network</b>
+                            <br/>
+                            <br/>
+                            <p style="font-size: x-small; text-align: justify;">
+                                The message traffic network shows the contents shared by dump's owner in a selected range of time.
+                                The node size depends on how many people are tagged in.
+                                The bigger the node is, more people are tagged in it.
+                            </p>
+                        </div>
+                        <div class="col-lg-3 col-md-6" style="text-align: center;">
+                            <b>Map </b>
+                            <br/>
+                            <br/>
+                            <p style="font-size: x-small; text-align: justify;">
+                                The map shows the content shared in a specific geo location in a selected range of time.
+                            </p>    
+                        </div>
+                        <div class="col-lg-3 col-md-6" style="text-align: center;">
+                            <b>Word frequency network</b>
+                            <br/>
+                            <br/>
+                            <p style="font-size: x-small; text-align: justify; ">
+                                The word frequency shows the most relevant used words in the selected time range.<br/>
+                                <b> <span style="color: darkred; font-style: oblique; text-decoration: underline; ">Warning: This option may take a long time in case of very large content. Use with caution.</span></b>
+                            </p> 
+                        </div>
+                    </div>
+                    The data to visualize could be filtered using the filters in the <b>menu panel</b>; there are a node slider, an edge slider and the time range slide. The filtered options are always available,
+                    but it is not advisable to work on very large time ranges because this means downloading a very large amount of data.
+                    <br/>
+                    At the right side users have the ability to select what kind of information they want to see using the two tabs on the top,
+                    according to that decision the system will generate the corresponding information below. 
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <div id="bodyapp"  class="container-fluid">
+
+            <div class="row">
+                <div class="menu-title d-flex bd-highlight" data-toggle="collapse" data-target="#collapseMenu" aria-expanded="false" aria-controls="collapseMenu">
+
+                    <span class="flex-grow-1 bd-highlight">Menu</span>
+                    <span class="material-icons bd-highlight">keyboard_arrow_down</span>
+                </div>
+                <div class="col-12 no-float menu collapse" id="collapseMenu">
+                    <div class="row">
+
+                        <div class="col-lg-8 col-md-12 no-float">
+                            <div class="row">
+                                <div class="col-lg-6 col-md-12 no-float">
+                                    <label for="amountNode" class="filter">
+                                    	<b>Min Node Value: </b>
+                                    	<span id="amountNode" ></span>
+                                    	<span class="material-icons label-info label-info-nodes" data-toggle="tooltip" title="Node value rappresents how many times a specific person was tagged by the dump's owner">info</span>
+                                    </label>
+                                    <div class="slider nodeSlider"></div>
+                                </div>
+                                <div class="col-lg-6 col-md-12 no-float">
+                                    <label for="amountEdge" class="filter" >
+                                    	<b>Min Edges Value: </b> 
+                                    	<span id="amountEdge" ></span>
+                                    	<span class="material-icons label-info label-info-edges" data-toggle="tooltip" title="Edge value rappresents how many times two people are tagged together by the dump's owner">info</span>
+                                    </label>
+                                    <div class="slider edgeSlider"></div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12 no-float">
+                                    <label for="amount" class="filter" >
+                                    	<b>Date range:</b>
+                                    	<span id="amount" ></span>
+                                    </label>
+                                    <div id="slider-range"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-2 col-md-12 no-float">
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text"><i class="material-icons">edit</i></span>
+                                </div>
+                                <input type="text" class="form-control searchKeyword" aria-label="Small" placeholder="Search a keyword">
+                            </div>
+
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text"><i class="material-icons">person</i></span>
+                                </div>
+                                <input type="text" class="form-control searchPerson" aria-label="Small" placeholder="Search a name">
+                            </div>
+                        </div>
+
+                        <div class="col-lg-2 col-md-12 no-float">
+                            <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <label class="input-group-text" for="inputGroupSelect01"><i class="material-icons">people</i></label>
+                            </div>
+                            <select class="custom-select social" id="inputGroupSelect01">
+                                <option value='facebook' selected>Facebook</option>
+                                <option value='twitter' >Twitter</option>
+                                <option value='mbox' >Mail box</option>
+                            </select>
+                        </div>
+                            <button  type="submit" class="btn btn-outline-dark searchData btn-lg">Search</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row main-section">
+                <div class="col-lg-9 col-md-12 no-float">
+                    <div class="row multibutton block">
+                        <div class=" btn block-physique" data-toggle="tooltip" data-placement="right" title="Stop dynamic graph">
+                            <i class="material-icons">
+                                block
+                            </i>
+                        </div>
+
+                        <span class="fb-filtering-rel">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input fb-user-type" type="radio" name="fb-user-type" id="fb-user-type-1" value="Friend">
+                                <label class="form-check-label" for="fb-user-type-1">Friend</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input fb-user-type" type="radio" name="fb-user-type" id="fb-user-type-2" value="remFriend">
+                                <label class="form-check-label" for="fb-user-type-2">Removed friend</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input fb-user-type" type="radio" name="fb-user-type" id="fb-user-type-3" value="All" checked>
+                                <label class="form-check-label" for="inlineRadio3">All</label>
+                            </div>
+                        </span>
+                        <span class="fb-filtering-trafficNet">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input fb-node-type" type="radio" name="fb-node-type" id="fb-node-type-1" value="all" checked>
+                                <label class="form-check-label" for="fb-node-type-1">All</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input fb-node-type" type="radio" name="fb-node-type" id="fb-node-type-2" value="post">
+                                <label class="form-check-label" for="fb-node-type-2">Posts</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input fb-node-type" type="radio" name="fb-node-type" id="fb-node-type-3" value="friendPost">
+                                <label class="form-check-label" for="fb-node-type-3">Friends posts</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input fb-node-type" type="radio" name="fb-node-type" id="fb-node-type-4" value="comment">
+                                <label class="form-check-label" for="fb-node-type-4">Comments</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input fb-node-type" type="radio" name="fb-node-type" id="fb-node-type-5" value="dm">
+                                <label class="form-check-label" for="fb-node-type-5">Direct messages</label>
+                            </div>
+                        </span>
+                        <span class="fb-filtering-map">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input fb-map" type="radio" name="fb-map" id="fb-map-1" value="post">
+                                <label class="form-check-label" for="fb-map-1">Post</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input fb-map" type="radio" name="fb-map" id="fb-map-2" value="geoTag">
+                                <label class="form-check-label" for="fb-map-2">Geo Tag</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input fb-map" type="radio" name="fb-map" id="fb-map-3" value="all" checked>
+                                <label class="form-check-label" for="fb-map-3">All</label>
+                            </div>
+                        </span>
+
+                        <span class="tw-filtering-rel">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input tw-user-type" type="radio" name="tw-user-type" id="inlineRadio1" value="follower">
+                                <label class="form-check-label" for="inlineRadio1">Follower</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input tw-user-type" type="radio" name="tw-user-type" id="inlineRadio2" value="following">
+                                <label class="form-check-label" for="inlineRadio2">Following</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input tw-user-type" type="radio" name="tw-user-type" id="inlineRadio3" value="All" checked>
+                                <label class="form-check-label" for="inlineRadio3">All</label>
+                            </div>
+                        </span>
+                        <span class="tw-filtering-trafficNet">
+                            <span class="tw-filtering-trafficNet-type">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input tweet-type" type="radio" name="tweet-type" id="tweet-type0" value="all" checked>
+                                    <label class="form-check-label" for="tweet-type0">All</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input tweet-type" type="radio" name="tweet-type" id="tweet-type1" value="tweet">
+                                    <label class="form-check-label" for="tweet-type1">Tweet</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input tweet-type" type="radio" name="tweet-type" id="tweet-type2" value="retweet">
+                                    <label class="form-check-label" for="tweet-type2">Retweet</label>
+                                </div>
+                            </span>
+                            <span class="tw-filtering-trafficNet-dimension">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input tw-node-type" type="radio" name="tw-node-type" id="twTrafNet1" value="nodeDegree" checked>
+                                    <label class="form-check-label" for="inlineRadio1">Node degree</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input tw-node-type" type="radio" name="tw-node-type" id="twTrafNet2" value="retweet_count">
+                                    <label class="form-check-label" for="inlineRadio2">Retweet count</label>
+                                </div>
+                            </span>
+                        </span>
+                    </div>
+
+                    <div class="row box content" id="content">
+
+                    </div>
+
+                    <div class="row multibutton">
+                        <div class="btn col-md-3 graphType graphType_selected" data-value="relNet">
+                            <span class="align-middle">Relationships network</span>
+                            <span class="material-icons infoGraph-relNet align-middle" data-toggle="tooltip"
+                                  title="The relathionship graph shows how the people are added and tagged by dump's owner in a selected range of time.
+                                            The node size depends on how many times a person is tagged.
+                                            The bigger the node is, more times the person is tagged.
+                                            The link between two people depends on how many times they are tagged together.
+                                            The bigger the link is, more times they are tagged together." style="font-size: small">info</span>
+                        </div>
+                        <div class="btn col-md-3 graphType" data-value="trafficNet">
+                            <span class="align-middle">Messages traffic network</span>
+                            <span class="material-icons infoGraph-trafficNet align-middle" data-toggle="tooltip"
+                                  title="The message traffic network shows the contents shared by dump's owner in a selected range of time.
+                                            The node size depends on how many people are tagged in.
+                                            The bigger the node is, more people are tagged in it. " style="font-size: small">info</span>
+                        </div>
+                        <div class="btn col-md-3 graphType" data-value="map">
+                            <span class="align-middle">Map</span>
+                            <span class="material-icons infoGraph-map align-middle" data-toggle="tooltip" title="The map shows the content shared in a specific geo location." style="font-size: small">info</span>
+                        </div>
+                        <div class="btn col-md-3 graphType" data-value="wordFrec">
+                            <span class="align-middle">Word frequency</span>
+                            <span class="material-icons infoGraph-wordFrec align-middle" data-toggle="tooltip" data-html="true" title="The word frequency shows the most frequently used words in the selected time range.
+                                <b><u><i>Warning: This option may take a long time in case of very large content. Use with caution.</i></u></b>" style="font-size: small">info</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-12 no-float">
+                    <div class="row multibutton">
+                        <button class="btn col-md-4 dataViz1 dataViz1_selected selected" data-value="selected">Selected</button>
+                        <button class="btn col-md-4 dataViz1 filtered" data-value="filtered">Filtered</button>
+                        <button class="btn col-md-4 dataViz1 all" data-value="all">All</button>
+                    </div>
+
+                    <div class="row multibutton">
+                        <button class="btn col-md-6 dataViz2 dataViz2_selected contacts" data-value="contacts">Contacts</button>
+                        <button class="btn col-md-6 dataViz2 links" data-value="links">Links</button>
+                    </div>
+                    <div class="row multibutton">
+
+                        <div class="col-4"> Sort by:</div>
+                        <div class="col-8">
+                            <select class="ordering-item custom-select custom-select-ordering-item" id="ordering-item">
+                                <option value="timedesc" selected>Time descending</option>
+                                <option value="timeasc">Time ascending</option>
+                                <option value="name" >Name</option>
+                                <option value="tagcount">Tagged together count</option>
+                                <option value="degree">Node degree</option>
+                            </select>
+                        </div>
+
+                    </div>
+                    <div class="row box navigation">
+                        <div class="data">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Boostrap + jQuery  -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+
+    <!-- Personal JavaScript -->
+    <script src="static/main.js"></script>
+    <script src="static/AllQueries.js"></script>
+    <script src="static/visualization/graphVisualization/graphVisualization.js"></script>
+    <script src="static/visualization/dataVisualization/dataVisualization.js"></script>
+    <script src="static/visualization/mapVisualization/mapVisualization.js"></script>
+    <script src="static/visualization/timelineVisualization/timelineVisualization.js"></script>
+
+    <!--neovis.js-->
+    <script src="https://cdn.neo4jlabs.com/neovis.js/v1.4.0/neovis.js"></script>
+
+
+    <!--openlayers-->
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.3.1/build/ol.js"></script>
+
+    <!--drawer-->
+    <script src="static/plugins/drawer/bootstrap-drawer.js"></script>
+
+    <!-- jQuery UI -->
+    <script src="static/plugins/jQueryUI/js/jquery-ui.js"></script>
+
+    <!--timeline-->
+    <script src="static/plugins/gantt/dist/frappe-gantt.js"></script>
+
+</body>
+</html>
