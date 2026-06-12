@@ -43,7 +43,7 @@ stop with `docker compose down`.
 
 | Service   | Image            | Role |
 |-----------|------------------|------|
-| `app`     | built here       | PHP gateway (`server.php`) + static frontend + the Python 2.7 backend it `shell_exec`s |
+| `app`     | built here       | PHP gateway (`server.php`) + the built React/Mantine frontend + the Python 2.7 backend it `shell_exec`s |
 | `neo4j`   | `neo4j:3.5`      | Graph store. APOC auto-installed; `apoc.refactor.mergeNodes` (FB dumper) is allowed |
 | `mysql`   | `mysql:5.7`      | `users` + `word_frequency` tables; schema auto-created on first boot |
 | `adminer` | `adminer:4`      | Optional MySQL web UI |
@@ -69,7 +69,7 @@ The browser-side graph (neovis.js) connects to Neo4j **from your browser**, so
 its password is shipped in client JS and cannot read compose env vars. If you
 change `NEO4J_AUTH` / `NEO4J_PASSWORD` in `docker-compose.yml`, also update
 `server_password` in
-[static/visualization/graphVisualization/graphVisualization.js](static/visualization/graphVisualization/graphVisualization.js)
+[frontend/src/legacy/graphVisualization.js](frontend/src/legacy/graphVisualization.js)
 to match, then rebuild (`docker compose up --build`). The default is
 `snapassword` in all three places.
 

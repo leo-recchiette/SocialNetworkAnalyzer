@@ -1,0 +1,71 @@
+html, body, #root {
+    height: 100%;
+    margin: 0;
+}
+
+/* ---- imperative areas owned by the legacy visualization modules ---- */
+
+.content {
+    background-color: #d4d4d8;
+    border-radius: 8px 8px 0 0;
+    overflow: auto;
+}
+
+.content:focus { outline: none; }
+
+.content #viz .vis-tooltip { display: none !important; }
+
+.navigation {
+    background-color: #e4e4e7;
+    color: #18181b;
+    border-radius: 0 0 8px 8px;
+    padding: 4px 12px;
+    overflow: auto;
+}
+
+/* minimal grid shim for markup injected by the legacy JS */
+.row { display: flex; flex-wrap: wrap; width: 100%; }
+.col-4 { width: 33.3333%; }
+.col-12 { width: 100%; }
+.sr-only { display: none; }
+
+.loading-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #52525b;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    animation: sna-rotation 1s linear infinite;
+}
+
+@keyframes sna-rotation {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ---- side data panel (markup injected by dataVisualization.js) ---- */
+.data { width: 100%; font-size: 0.875rem; }
+.data .dataKey { font-weight: 700; color: #18181b; }
+.data .dataValue { overflow-wrap: break-word; }
+.data .spoiler-btn { cursor: pointer; font-size: 0.75rem; color: #18181b; text-decoration: underline; }
+.data .spoiler-body { display: none; }
+.data .istaggedWith, .data .infoPlace { padding-left: 0.875rem; font-size: 0.875rem; border-left: 4px double #3f3f46; }
+.data hr { border: 0; height: 1px; background-color: #3f3f46; margin: 0.5rem 0; }
+.data .noDataFound, .data .noDataFound .material-icons { color: #b91c1c; font-size: 1rem; }
+.data .noDataFound .material-icons { margin-left: 47%; }
+
+/* ---- third-party visualizations ---- */
+.gantt .bar { fill: #3f3f3f !important; }
+.gantt .bar-label {
+    fill: #fff;
+    dominant-baseline: central;
+    text-anchor: middle;
+    font-size: 10px !important;
+    font-weight: normal !important;
+}
+.gantt .handle { display: none; }
+
+.ol-attribution.ol-uncollapsible { bottom: 0; right: 0; border-radius: 0 !important; font-size: small !important; }
+.ol-attribution:not(.ol-collapsed) { background: transparent !important; }
+.ol-zoom { top: 2.0em !important; left: .5em; }
