@@ -1,0 +1,21 @@
+# Python 2.7 dependency set for the SNA backend (the app runs on CPython 2.7).
+#
+# Every pin is the LAST release that supports Python 2.7. numpy/scipy/pandas/
+# scikit-learn all ship prebuilt cp27 manylinux1 wheels on PyPI, so the image
+# builds without a C/Fortran toolchain. The four are version-interlocked and
+# mutually compatible (scipy 1.2.3 + sklearn 0.20.4 + pandas 0.24.2 all accept
+# numpy 1.16.6).
+
+numpy==1.16.6
+scipy==1.2.3
+pandas==0.24.2
+scikit-learn==0.20.4
+nltk==3.4.5                     # pure-python sdist (no wheel) — installs w/o a compiler
+requests==2.27.1                # used by server/dumper/twitterDumpUploader.py
+mysql-connector-python==8.0.23  # provides `import mysql.connector`; speaks to MySQL 5.7
+
+# py2neo 4.3.0 — the API the code was written against — was REMOVED from PyPI
+# (only 2021.2.4 remains, which has a breaking API). Install the exact 4.3.0
+# release from its git tag; all its deps (neobolt, neotime, ...) are still on
+# PyPI and py2.7-compatible. Requires `git` in the image (installed in Dockerfile).
+git+https://github.com/neo4j-contrib/py2neo.git@py2neo-4.3.0#egg=py2neo

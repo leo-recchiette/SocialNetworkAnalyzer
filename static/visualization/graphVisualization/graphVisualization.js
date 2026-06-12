@@ -29,9 +29,13 @@ function drawGraph(cmd, direction, dimension)
 
     let config = {
         container_id: "viz",
+        // neovis.js runs in the browser and talks to Neo4j directly over bolt.
+        // docker-compose maps the neo4j container's 7687 to localhost:7687, so
+        // "localhost" is correct from the user's machine. The password must match
+        // NEO4J_AUTH in docker-compose.yml (default: snapassword).
         server_url: "bolt://localhost:7687",
         server_user: "neo4j",
-        server_password: "********",
+        server_password: "snapassword",
         arrows: direction,
         labels: {
             // facebook graph node

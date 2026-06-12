@@ -1,4 +1,11 @@
 <?php
+    // Base directory containing the Python backend (the `server/` folder lives
+    // next to this file). Previously the scripts were invoked via a hardcoded
+    // "'.$SNA_BASE.'/server/..." path; deriving it from __DIR__ makes the app
+    // relocatable and lets it run unchanged inside the Docker image, where it
+    // lives at /var/www/html. Override with the SNA_BASE env var if needed.
+    $SNA_BASE = getenv('SNA_BASE') ?: __DIR__;
+
     class config {
         public function __construct($value, $user_name)
         {
@@ -33,7 +40,7 @@
         $pass = escapeshellarg($_POST['pass']);
         $action = $_POST['action'];
 
-        $output = shell_exec('python ~/sna/server/userManagement.py '. $user.' '. $pass .' \''.$action.'\' 2>&1');
+        $output = shell_exec('python '.$SNA_BASE.'/server/userManagement.py '. $user.' '. $pass .' \''.$action.'\' 2>&1');
 
         if ($action == 'login')
         {
@@ -72,7 +79,7 @@
         $user = escapeshellarg($_POST['usr']);
         $sn = escapeshellarg($_POST['sn']);
 
-        $output = shell_exec('python ~/sna/server/getValueForSearching.py '. $user.' '. $sn .' 2>&1');
+        $output = shell_exec('python '.$SNA_BASE.'/server/getValueForSearching.py '. $user.' '. $sn .' 2>&1');
 
         echo $output;
     }
@@ -83,7 +90,7 @@
         $typedValue = escapeshellarg($_POST['typedValue']);
         $action = $_POST['action'];
 
-        $output = shell_exec('python ~/sna/server/userManagement.py '. $user.' '. $typedValue .' \''.$action.'\' 2>&1');
+        $output = shell_exec('python '.$SNA_BASE.'/server/userManagement.py '. $user.' '. $typedValue .' \''.$action.'\' 2>&1');
 
         if ($action == 'change-mail')
         {
@@ -125,11 +132,11 @@
 
                 if ($file_ext == 'zip'){
                     if (strpos( $_FILES['file']['name'], 'facebook') !== false){
-                        $output = shell_exec('python ~/sna/server/dumper/fbDumpUploader.py '.$path.' '.$_POST['user'].' '.$wordFrecOption.' 2>&1');
+                        $output = shell_exec('python '.$SNA_BASE.'/server/dumper/fbDumpUploader.py '.$path.' '.$_POST['user'].' '.$wordFrecOption.' 2>&1');
                         echo $output;
                     }
                     else if (strpos( $_FILES['file']['name'], 'twitter') !== false){
-                        $output = shell_exec('python ~/sna/server/dumper/twitterDumpUploader.py '.$path.' '.$_POST['user'].' '.$wordFrecOption.' 2>&1');
+                        $output = shell_exec('python '.$SNA_BASE.'/server/dumper/twitterDumpUploader.py '.$path.' '.$_POST['user'].' '.$wordFrecOption.' 2>&1');
                         echo $output;
                     }
                 }
@@ -150,7 +157,7 @@
                     );
                     $sender = $structuredMessage->headers['from'];
                     $mbox->close();
-                    $output = shell_exec('python ~/sna/server/dumper/mboxDumpUploader.py getNodesEdges '.$path.'/'.$_FILES['file']['name'].' '.$sender.' '.$_POST['user'].' '.$wordFrecOption.' 2>&1');
+                    $output = shell_exec('python '.$SNA_BASE.'/server/dumper/mboxDumpUploader.py getNodesEdges '.$path.'/'.$_FILES['file']['name'].' '.$sender.' '.$_POST['user'].' '.$wordFrecOption.' 2>&1');
                     echo $output;
                 }
                 rrmdir($path);
@@ -163,7 +170,7 @@
     {
         $valueToDelete = $_POST['valueToDelete'];
         $usr = $_POST['usr'];
-        $cmd = 'python -W ignore ~/sna/server/menageDumps.py '.$usr.' '.$valueToDelete.' 2>&1';
+        $cmd = 'python -W ignore '.$SNA_BASE.'/server/menageDumps.py '.$usr.' '.$valueToDelete.' 2>&1';
         $output = shell_exec($cmd);
         echo $output;
     }
@@ -176,7 +183,7 @@
             $dataToSearch = escapeshellarg($_POST['dataToSearch']);
             $id = escapeshellarg($_POST['id']);
 
-            $cmd = 'python -W ignore ~/sna/server/dataSearcher/getData.py '.$dataToSearch.' '.$id.' 2>&1';
+            $cmd = 'python -W ignore '.$SNA_BASE.'/server/dataSearcher/getData.py '.$dataToSearch.' '.$id.' 2>&1';
             $output = shell_exec($cmd);
             echo $output;
         }
@@ -186,7 +193,7 @@
             $lat = escapeshellarg($_POST['lat']);
             $lng = escapeshellarg($_POST['lng']);
 
-            $cmd = 'python -W ignore ~/sna/server/dataSearcher/getData.py '.$dataToSearch.' '.$lat.' '.$lng.' 2>&1';
+            $cmd = 'python -W ignore '.$SNA_BASE.'/server/dataSearcher/getData.py '.$dataToSearch.' '.$lat.' '.$lng.' 2>&1';
             $output = shell_exec($cmd);
             echo $output;
         }
@@ -194,7 +201,7 @@
         {
             $dataToSearch = escapeshellarg($_POST['dataToSearch']);
 
-            $cmd = 'python -W ignore ~/sna/server/dataSearcher/getMarkerForMap.py '.$dataToSearch.' '.$_POST['markersToDisplay'].' 2>&1';
+            $cmd = 'python -W ignore '.$SNA_BASE.'/server/dataSearcher/getMarkerForMap.py '.$dataToSearch.' '.$_POST['markersToDisplay'].' 2>&1';
             $output = shell_exec($cmd);
             echo $output;
         }
@@ -202,7 +209,7 @@
         {
             $dataToSearch = escapeshellarg($_POST['dataToSearch']);
 
-            $cmd = 'python -W ignore ~/sna/server/dataSearcher/getData.py '.$dataToSearch.' '.$_POST['ntd'].' 2>&1';
+            $cmd = 'python -W ignore '.$SNA_BASE.'/server/dataSearcher/getData.py '.$dataToSearch.' '.$_POST['ntd'].' 2>&1';
             $output = shell_exec($cmd);
             echo $output;
         }
@@ -210,7 +217,7 @@
         {
              $dataToSearch = escapeshellarg($_POST['dataToSearch']);
 
-             $cmd = 'python -W ignore ~/sna/server/dataSearcher/getTimelineObject.py '.$dataToSearch.' 2>&1';
+             $cmd = 'python -W ignore '.$SNA_BASE.'/server/dataSearcher/getTimelineObject.py '.$dataToSearch.' 2>&1';
              $output = shell_exec($cmd);
              echo $output;
         }
@@ -219,7 +226,7 @@
              $dataToSearch = escapeshellarg($_POST['dataToSearch']);
              $word = escapeshellarg($_POST['word']);
 
-             $cmd = 'python -W ignore ~/sna/server/dataSearcher/getSingleWordsFrequencyContent.py '.$dataToSearch.' '.$word.' 2>&1';
+             $cmd = 'python -W ignore '.$SNA_BASE.'/server/dataSearcher/getSingleWordsFrequencyContent.py '.$dataToSearch.' '.$word.' 2>&1';
              $output = shell_exec($cmd);
              echo $output;
         }

@@ -1,22 +1,42 @@
 #  coding: utf-8
 #! /usr/bin/env python
 
-import json
-import sys
+# Connection helpers for Neo4j (py2neo) and MySQL (mysql.connector).
+#
+# Connection details come from environment variables so the same code runs
+# under docker-compose (which sets NEO4J_HOST=neo4j / MYSQL_HOST=mysql) and on a
+# plain local install (defaults below point at localhost). Override any value
+# via the environment instead of editing this file.
 
-sys.path.append('~/anaconda2/envs/sna/lib/python2.7/site-packages')
+import os
 
-from py2neo import Graph, NodeMatcher
+from py2neo import Graph, NodeMatcher  # NodeMatcher kept available for callers
 
 import mysql.connector
 
+
 def neo4jHelper():
-    return Graph(host='localhost:7687', auth=('neo4j', '*******'))
+    # NOTE: py2neo expects host and port as SEPARATE arguments. Passing
+    # host='localhost:7687' (as the original code did) builds the malformed URI
+    # bolt://localhost:7687:7687 and never connects.
+    return Graph(
+        host=os.environ.get('NEO4J_HOST', 'localhost'),
+        port=int(os.environ.get('NEO4J_PORT', '7687')),
+        auth=(
+            os.environ.get('NEO4J_USER', 'neo4j'),
+            os.environ.get('NEO4J_PASSWORD', 'snapassword'),
+        ),
+    )
+
 
 def sqlHelper():
     return mysql.connector.connect(
-        user='root',
-        password='*******',
-        host='127.0.0.1',
-        database='sna_tool'
+        host=os.environ.get('MYSQL_HOST', '127.0.0.1'),
+        port=int(os.environ.get('MYSQL_PORT', '3306')),
+        user=os.environ.get('MYSQL_USER', 'root'),
+        password=os.environ.get('MYSQL_PASSWORD', 'snapassword'),
+        database=os.environ.get('MYSQL_DATABASE', 'sna_tool'),
+        # Match the utf8mb4 schema (docker/mysql/init/01-schema.sql); without this
+        # the connection negotiates utf8mb3 and 4-byte chars are rejected.
+        charset='utf8mb4',
     )
