@@ -1,4 +1,21 @@
-# Set up #
+# Run with Docker (recommended) #
+
+The whole stack — the app (PHP + Python 2.7), Neo4j, and MySQL — can be started
+with a single command, no manual setup required:
+
+```bash
+docker compose up --build
+```
+
+Then open http://localhost:8080. See **[DOCKER.md](DOCKER.md)** for details
+(ports, default credentials, persistence, troubleshooting).
+
+The manual setup below is only needed if you want to run the app **without**
+Docker.
+
+---
+
+# Set up (manual / without Docker) #
 
 ### 1. Creation of databases ###
    First of all you'll need to create a local instance of two databases: SQL and Neo4j
@@ -41,15 +58,16 @@
    * Install anaconda, find instruction (https://docs.anaconda.com/anaconda/install/). Alternatively you could install miniconda for python 2.7 according to you OS. Download from [here](https://docs.conda.io/en/latest/miniconda.html)
    * Create an env using the command ``` conda create --name (env_name)```, then activate it
    * Install pip according to your OS. Instruction [here](https://pip.pypa.io/en/stable/installing/)
-   * Install the following package using the comand ```pip install```:
-        - mysql-connector 2.2.9
+   * Install the Python dependencies with `pip install -r docker/requirements.txt`. That file is the authoritative, last-Python-2.7-compatible set (some of the older versions originally listed here cannot install on Python 2.7). It pins:
+        - numpy 1.16.6
+        - scipy 1.2.3
+        - pandas 0.24.2
+        - scikit-learn 0.20.4
         - nltk 3.4.5
-        - numpy 1.9.0
-        - pandas 0.22.0
-        - py2neo 4.3.0
-        - scikit-learn 0.22.4
-        - scipy 1.2.3 
-        - sklearn
+        - requests 2.27.1
+        - mysql-connector-python 8.0.23
+        - py2neo 4.3.0 (installed from its git tag — it was removed from PyPI)
+   * After installing nltk, download the corpora it uses: `python -m nltk.downloader stopwords punkt`
    * Install Pear package manager. You can find instruction [here](https://pear.php.net/manual/en/installation.getting.php)
         - Install mail_mbox. More information [here](https://pear.php.net/package/Mail_Mbox/download)
         - Install mail_mimeDecode. More information [here](https://pear.php.net/package/Mail_mimeDecode/)
@@ -62,21 +80,18 @@
    post_max_size = 500M
    `````
 
-### 3. Set variable inside the code ###
-   * Need to set the password (and the host) into ```/server/dbConnector.py```
+### 3. Set the database credentials ###
+   `/server/dbConnector.py` reads its connection settings from environment
+   variables (with localhost defaults), so you no longer edit the file — export
+   the values your local Neo4j/MySQL use:
    ````
-   def neo4jHelper():
-    return Graph(host='localhost:7687', auth=('neo4j', '*******'))
+   export NEO4J_HOST=localhost NEO4J_PORT=7687 NEO4J_USER=neo4j NEO4J_PASSWORD=yourpassword
+   export MYSQL_HOST=127.0.0.1 MYSQL_PORT=3306 MYSQL_USER=root MYSQL_PASSWORD=yourpassword MYSQL_DATABASE=sna_tool
+   ````
+   The browser-side graph also needs the Neo4j password: set `server_password`
+   in `static/visualization/graphVisualization/graphVisualization.js`.
 
-   def sqlHelper():
-    return mysql.connector.connect(
-        user='root',
-        password='*******',
-        host='127.0.0.1',
-        database='sna_tool'
-    )
-   ````
-   * If you have some problem with the installed packages, you should modify the path using absolute path in ```sys.path.append()``` into python scripts or mbox.php and mimeDecode.php path into ```server.php```
+   * If you have some problem with the installed packages, set `PYTHONPATH` to include `server/` and `server/dataSearcher/nlp/` (the `sys.path.append('~/...')` lines in the scripts do not work — `~` is not expanded). Also check the `mbox.php`/`mimeDecode.php` (PEAR) include path used by ```server.php```.
 
 # The Application #
 

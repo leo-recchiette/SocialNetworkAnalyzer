@@ -1,0 +1,22 @@
+# VCS / OS noise
+.git
+.gitignore
+.DS_Store
+**/.DS_Store
+
+# Docs / meta that the image doesn't need
+CLAUDE.md
+
+# Never bake real uploaded dumps into the image (the dir is recreated at runtime)
+uploads/*/
+!uploads/README.txt
+
+# Compiled Python — regenerated inside the container against its own interpreter
+**/*.pyc
+
+# JS plugin dev cruft (the built dist/ files we serve are kept)
+**/node_modules
+static/plugins/**/__tests__
+static/plugins/**/__mocks__
+static/plugins/**/.circleci
+static/plugins/**/.git*
