@@ -42,7 +42,7 @@ def register(usr, pwd):
 
     cursor = db.cursor()
     finduser = "select * from users where mail= '" + usr +"'"
-    cursor.execute(finduser, usr)
+    cursor.execute(finduser)
 
     records = cursor.fetchall()
 
