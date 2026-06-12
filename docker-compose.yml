@@ -16,6 +16,11 @@
 
 services:
   app:
+    # neo4j:3.5 and mysql:5.7 ship no arm64 manifests, and the app's Python 2.7
+    # scientific wheels (numpy/scipy/pandas/scikit-learn) are x86_64-only — the
+    # image has no C/Fortran toolchain to build them from source. So every
+    # service is pinned to linux/amd64; on Apple Silicon it runs under emulation.
+    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile
@@ -41,6 +46,7 @@ services:
     restart: unless-stopped
 
   neo4j:
+    platform: linux/amd64
     image: neo4j:3.5
     container_name: sna_neo4j
     ports:
@@ -68,6 +74,7 @@ services:
     restart: unless-stopped
 
   mysql:
+    platform: linux/amd64
     image: mysql:5.7
     container_name: sna_mysql
     ports:
@@ -88,6 +95,7 @@ services:
     restart: unless-stopped
 
   adminer:
+    platform: linux/amd64
     image: adminer:4
     container_name: sna_adminer
     ports:

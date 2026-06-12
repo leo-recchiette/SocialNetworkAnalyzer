@@ -10,11 +10,11 @@ numpy==1.16.6
 scipy==1.2.3
 pandas==0.24.2
 scikit-learn==0.20.4
-nltk==3.4.5                     # pure-python sdist (no wheel) — installs w/o a compiler
+nltk==3.4.5                     # pure-python sdist (no wheel) -- installs w/o a compiler
 requests==2.27.1                # used by server/dumper/twitterDumpUploader.py
 mysql-connector-python==8.0.23  # provides `import mysql.connector`; speaks to MySQL 5.7
 
-# py2neo 4.3.0 — the API the code was written against — was REMOVED from PyPI
+# py2neo 4.3.0 -- the API the code was written against -- was REMOVED from PyPI
 # (only 2021.2.4 remains, which has a breaking API). Install the exact 4.3.0
 # release from its git tag; all its deps (neobolt, neotime, ...) are still on
 # PyPI and py2.7-compatible. Requires `git` in the image (installed in Dockerfile).

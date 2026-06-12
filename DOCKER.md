@@ -11,6 +11,13 @@ and an optional MySQL web UI — no manual conda/PEAR/Neo4j/MySQL setup needed.
   plugin; the build downloads pip/PyPI/PEAR packages and NLTK corpora and
   `git clone`s py2neo 4.3.0 from GitHub — it was removed from PyPI).
 - ~2–3 GB free disk for images and the build.
+- **Apple Silicon (M1/M2/M3) or other arm64 hosts:** `neo4j:3.5` and `mysql:5.7`
+  ship no arm64 images, and the Python 2.7 scientific wheels (numpy/scipy/…) are
+  x86_64-only, so every service is pinned to `platform: linux/amd64` in
+  [docker-compose.yml](docker-compose.yml) and runs under emulation. Nothing to
+  do — just expect a slower first build. For better performance, optionally
+  enable Docker Desktop → Settings → General → *Use Rosetta for x86_64/amd64
+  emulation*.
 
 ## Quick start
 
@@ -81,6 +88,11 @@ docker compose down -v
 
 ## Troubleshooting
 
+- **`no matching manifest for linux/arm64/v8` on `docker compose up`.** You're on
+  an arm64 host (Apple Silicon). `neo4j:3.5` / `mysql:5.7` have no arm64 images.
+  The compose file already pins every service to `platform: linux/amd64`; if you
+  hit this, make sure those `platform:` keys are still present and that Docker
+  Desktop can run amd64 images (it can by default, via QEMU/Rosetta).
 - **MySQL schema didn't appear.** The init SQL in `docker/mysql/init/` runs only
   when the data volume is empty (first boot). After changing it, recreate:
   `docker compose down -v && docker compose up --build`.

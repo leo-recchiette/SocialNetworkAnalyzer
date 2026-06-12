@@ -39,4 +39,9 @@ def sqlHelper():
         # Match the utf8mb4 schema (docker/mysql/init/01-schema.sql); without this
         # the connection negotiates utf8mb3 and 4-byte chars are rejected.
         charset='utf8mb4',
+        # Pin the collation too: mysql-connector-python 8.0.x defaults utf8mb4 to
+        # utf8mb4_0900_ai_ci, which only exists in MySQL 8.0 and makes the 5.7
+        # server reject the connection ("Unknown collation: 'utf8mb4_0900_ai_ci'").
+        # The schema uses utf8mb4_unicode_ci, which MySQL 5.7 supports.
+        collation='utf8mb4_unicode_ci',
     )
