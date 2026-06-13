@@ -940,8 +940,8 @@ function createMboxrRelationshipNetworkQuery(keyword, person, start_date, end_da
             'WHERE ' +
             ' exists((n)--(m)) AND exists((p)--(m)) AND ' +
             ' n.label  =~\'(?i).*' + person + '.*\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-            ' r.edge_weight>' + minEdgeValue + ' ' +
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+            ' r.edge_weight>=' + minEdgeValue + ' ' +
             'RETURN x'
 
     else if (keyword !== '' && person ==='')
@@ -953,8 +953,8 @@ function createMboxrRelationshipNetworkQuery(keyword, person, start_date, end_da
             'MATCH x=(n)-[r:UNDIRECTED_EDGE]-(p {graph_information:[\'' + usr +'\', \'mbox\']}) ' +
             'WHERE ' +
             ' exists((n)--(m)) AND exists((p)--(m)) AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-            ' r.edge_weight>' + minEdgeValue + ' ' +
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+            ' r.edge_weight>=' + minEdgeValue + ' ' +
             'RETURN x'
 
     else if (keyword === '' && person !== '')
@@ -964,8 +964,8 @@ function createMboxrRelationshipNetworkQuery(keyword, person, start_date, end_da
             ' n.firstInteration>=\'' + start_date + '\' AND n.firstInteration<=\'' + end_date + '\' AND ' +
             ' p.firstInteration>=\'' + start_date + '\' AND p.firstInteration<=\'' + end_date + '\' AND ' +
             ' n.label  =~\'(?i).*' + person + '.*\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-            ' r.edge_weight>' + minEdgeValue + ' ' +
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+            ' r.edge_weight>=' + minEdgeValue + ' ' +
             'RETURN x'
 
     else if (keyword === '' && person === '')
@@ -974,8 +974,8 @@ function createMboxrRelationshipNetworkQuery(keyword, person, start_date, end_da
             'WHERE ' +
             ' n.firstInteration>=\'' + start_date + '\' AND n.firstInteration<=\'' + end_date + '\' AND ' +
             ' p.firstInteration>=\'' + start_date + '\' AND p.firstInteration<=\'' + end_date + '\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-            ' r.edge_weight>' + minEdgeValue + ' ' +
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+            ' r.edge_weight>=' + minEdgeValue + ' ' +
             'RETURN x'
 
     return mboxCmd;
@@ -995,8 +995,8 @@ function createMboxTrafficNetworkQuery(keyword, person, start_date, end_date, mi
             'WHERE ' +
             ' exists((n)--(m)) AND exists((p)--(m)) AND ' +
             ' n.label  =~\'(?i).*' + person + '.*\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-            ' r.edge_weight>' + minEdgeValue + ' ' +
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+            ' r.edge_weight>=' + minEdgeValue + ' ' +
             'RETURN x'
 
     else if (keyword !== '' && person ==='')
@@ -1008,8 +1008,8 @@ function createMboxTrafficNetworkQuery(keyword, person, start_date, end_date, mi
             'MATCH x=(n)-[r:DIRECTED_EDGE]-(p {graph_information:[\'' + usr +'\', \'mbox\']}) ' +
             'WHERE ' +
             ' exists((n)--(m)) AND exists((p)--(m)) AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-            ' r.edge_weight>' + minEdgeValue + ' ' +
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+            ' r.edge_weight>=' + minEdgeValue + ' ' +
             'RETURN x'
     else if (keyword === '' && person !== '')
         mboxCmd =
@@ -1018,8 +1018,8 @@ function createMboxTrafficNetworkQuery(keyword, person, start_date, end_date, mi
             ' n.firstInteration>=\'' + start_date + '\' AND n.firstInteration<=\'' + end_date + '\' AND ' +
             ' p.firstInteration>=\'' + start_date + '\' AND p.firstInteration<=\'' + end_date + '\' AND ' +
             ' n.label  =~\'(?i).*' + person + '.*\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-            ' r.edge_weight>' + minEdgeValue + ' ' +
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+            ' r.edge_weight>=' + minEdgeValue + ' ' +
             'RETURN x'
 
     else if (keyword === '' && person === '')
@@ -1028,8 +1028,8 @@ function createMboxTrafficNetworkQuery(keyword, person, start_date, end_date, mi
             'WHERE ' +
             ' n.firstInteration>=\'' + start_date + '\' AND n.firstInteration<=\'' + end_date + '\' AND ' +
             ' p.firstInteration>=\'' + start_date + '\' AND p.firstInteration<=\'' + end_date + '\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-            ' r.edge_weight>' + minEdgeValue + ' ' +
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+            ' r.edge_weight>=' + minEdgeValue + ' ' +
             'RETURN x'
 
     return mboxCmd;

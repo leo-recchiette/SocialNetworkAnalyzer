@@ -618,8 +618,8 @@ def getMboxSelectedContactsForRelationshipNetwork(keyword, person, start_date, e
             ' ID(n) = ' + id +' AND '
             ' n.firstInteration>=\'' + start_date + '\' AND n.firstInteration<=\'' + end_date + '\' AND ' +
             ' p.firstInteration>=\'' + start_date + '\' AND p.firstInteration<=\'' + end_date + '\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND '
-            ' r.edge_weight>' + minEdgeValue + ' '
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND '
+            ' r.edge_weight>=' + minEdgeValue + ' '
             'RETURN n AS node, count(r) AS taggedTogetherValue, collect(distinct p.label) AS taggedWith'
         ).data()
     else:
@@ -628,8 +628,8 @@ def getMboxSelectedContactsForRelationshipNetwork(keyword, person, start_date, e
             'WHERE '
             ' n.firstInteration>=\'' + start_date + '\' AND n.firstInteration<=\'' + end_date + '\' AND ' +
             ' p.firstInteration>=\'' + start_date + '\' AND p.firstInteration<=\'' + end_date + '\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND '
-            ' r.edge_weight>' + minEdgeValue + ' '
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND '
+            ' r.edge_weight>=' + minEdgeValue + ' '
             'RETURN count(n) AS Counter'
         ).data()
 
@@ -642,8 +642,8 @@ def getMboxSelectedContactsForTrafficNetwork(keyword, person, start_date, end_da
             'WHERE '
             ' n.firstInteration>=\'' + start_date + '\' AND n.firstInteration<=\'' + end_date + '\' AND ' +
             ' p.firstInteration>=\'' + start_date + '\' AND p.firstInteration<=\'' + end_date + '\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND '
-            ' r.edge_weight>' + minEdgeValue + ' '
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND '
+            ' r.edge_weight>=' + minEdgeValue + ' '
             'RETURN count(n) AS Counter'
         ).data()
     else:
@@ -653,8 +653,8 @@ def getMboxSelectedContactsForTrafficNetwork(keyword, person, start_date, end_da
             ' ID(n) = ' + id + ' AND '
             ' n.firstInteration>=\'' + start_date + '\' AND n.firstInteration<=\'' + end_date + '\' AND ' +
             ' p.firstInteration>=\'' + start_date + '\' AND p.firstInteration<=\'' + end_date + '\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND '
-            ' r.edge_weight>' + minEdgeValue + ' '
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND '
+            ' r.edge_weight>=' + minEdgeValue + ' '
             'RETURN n AS node, count(r) AS taggedTogetherValue, collect(distinct p.label) AS taggedWith'
         ).data()
 
@@ -1742,8 +1742,8 @@ def getMboxFilteredContactsForRelationshipNetwork(keyword, person, start_date, e
             'WHERE ' +
             ' exists((n)--(m)) AND exists((p)--(m)) AND ' +
             ' n.label  =~\'(?ism).*' + person + '.*\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-            ' r.edge_weight>' + minEdgeValue + ' ' +
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+            ' r.edge_weight>=' + minEdgeValue + ' ' +
             'RETURN n AS node, count(r) AS taggedTogetherValue ORDER BY '
         )
     if keyword != '' and person == '':
@@ -1755,8 +1755,8 @@ def getMboxFilteredContactsForRelationshipNetwork(keyword, person, start_date, e
                 'MATCH x=(n)-[r:UNDIRECTED_EDGE]-(p {graph_information:[\'' + usr + '\', \'mbox\']}) ' +
                 'WHERE ' +
                 ' exists((n)--(m)) AND exists((p)--(m)) AND ' +
-                ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-                ' r.edge_weight>' + minEdgeValue + ' ' +
+                ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+                ' r.edge_weight>=' + minEdgeValue + ' ' +
                 'RETURN n AS node, count(r) AS taggedTogetherValue ORDER BY '
         )
     elif keyword == '' and person != '':
@@ -1766,8 +1766,8 @@ def getMboxFilteredContactsForRelationshipNetwork(keyword, person, start_date, e
             ' n.firstInteration>=\'' + start_date + '\' AND n.firstInteration<=\'' + end_date + '\' AND ' +
             ' p.firstInteration>=\'' + start_date + '\' AND p.firstInteration<=\'' + end_date + '\' AND ' +
             ' n.label  =~\'(?ism).*' + person + '.*\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-            ' r.edge_weight>' + minEdgeValue + ' ' +
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+            ' r.edge_weight>=' + minEdgeValue + ' ' +
             'RETURN n AS node, count(r) AS taggedTogetherValue ORDER BY '
         )
     elif keyword == '' and person == '':
@@ -1776,8 +1776,8 @@ def getMboxFilteredContactsForRelationshipNetwork(keyword, person, start_date, e
             'WHERE '
             ' n.firstInteration>=\'' + start_date + '\' AND n.firstInteration<=\'' + end_date + '\' AND ' +
             ' p.firstInteration>=\'' + start_date + '\' AND p.firstInteration<=\'' + end_date + '\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND '
-            ' r.edge_weight>' + minEdgeValue + ' '
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND '
+            ' r.edge_weight>=' + minEdgeValue + ' '
             'RETURN n AS node, count(r) AS taggedTogetherValue ORDER BY '
         )
 
@@ -1808,8 +1808,8 @@ def getMboxFilteredContactsForTrafficNetwork(keyword, person, start_date, end_da
             'WHERE ' +
             ' exists((n)--(m)) AND exists((p)--(m)) AND ' +
             ' n.label  =~\'(?ism).*' + person + '.*\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-            ' r.edge_weight>' + minEdgeValue + ' ' +
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+            ' r.edge_weight>=' + minEdgeValue + ' ' +
             'RETURN n AS node, count(r) AS taggedTogetherValue ORDER BY '
         )
     if keyword != '' and person == '':
@@ -1821,8 +1821,8 @@ def getMboxFilteredContactsForTrafficNetwork(keyword, person, start_date, end_da
                 'MATCH x=(n)-[r:DIRECTED_EDGE]-(p {graph_information:[\'' + usr + '\', \'mbox\']}) ' +
                 'WHERE ' +
                 ' exists((n)--(m)) AND exists((p)--(m)) AND ' +
-                ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-                ' r.edge_weight>' + minEdgeValue + ' ' +
+                ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+                ' r.edge_weight>=' + minEdgeValue + ' ' +
                 'RETURN n AS node, count(r) AS taggedTogetherValue ORDER BY '
         )
     elif keyword == '' and person != '':
@@ -1832,8 +1832,8 @@ def getMboxFilteredContactsForTrafficNetwork(keyword, person, start_date, end_da
             ' n.firstInteration>=\'' + start_date + '\' AND n.firstInteration<=\'' + end_date + '\' AND ' +
             ' p.firstInteration>=\'' + start_date + '\' AND p.firstInteration<=\'' + end_date + '\' AND ' +
             ' n.label  =~\'(?ism).*' + person + '.*\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-            ' r.edge_weight>' + minEdgeValue + ' ' +
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+            ' r.edge_weight>=' + minEdgeValue + ' ' +
             'RETURN n AS node, count(r) AS taggedTogetherValue ORDER BY '
         )
     elif keyword == '' and person == '':
@@ -1842,8 +1842,8 @@ def getMboxFilteredContactsForTrafficNetwork(keyword, person, start_date, end_da
             'WHERE '
             ' n.firstInteration>=\'' + start_date + '\' AND n.firstInteration<=\'' + end_date + '\' AND ' +
             ' p.firstInteration>=\'' + start_date + '\' AND p.firstInteration<=\'' + end_date + '\' AND ' +
-            ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND '
-            ' r.edge_weight>' + minEdgeValue + ' '
+            ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND '
+            ' r.edge_weight>=' + minEdgeValue + ' '
             'RETURN n AS node, count(r) AS taggedTogetherValue ORDER BY '
         )
 
@@ -2225,8 +2225,8 @@ def getMboxFilteredLinksForRelationshipNetwork(keyword, person, start_date, end_
         'MATCH (n)-[r:UNDIRECTED_EDGE]->(p {graph_information:[\'' + usr + '\', \'mbox\']}) ' +
         'WHERE ' +
         ' m.time>=\'' + start_date + '\' AND m.time<=\'' + end_date + '\' AND ' +
-        ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-        ' r.edge_weight>' + minEdgeValue + ' ' +
+        ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+        ' r.edge_weight>=' + minEdgeValue + ' ' +
         'RETURN DISTINCT r, n.label AS name_1, p.label AS name_2, r.edge_weight AS link order by r.edge_weight DESC'
     ).data()
 
@@ -2237,8 +2237,8 @@ def getMboxFilteredLinksForTrafficNetwork(keyword, person, start_date, end_date,
         'WHERE ' +
         ' n.firstInteration>=\'' + start_date + '\' AND n.firstInteration<=\'' + end_date + '\' AND ' +
         ' p.firstInteration>=\'' + start_date + '\' AND p.firstInteration<=\'' + end_date + '\' AND ' +
-        ' n.nodeDegree>' + minNodevalue + ' AND p.nodeDegree>' + minNodevalue + ' AND ' +
-        ' r.edge_weight>' + minEdgeValue + ' ' +
+        ' n.nodeDegree>=' + minNodevalue + ' AND p.nodeDegree>=' + minNodevalue + ' AND ' +
+        ' r.edge_weight>=' + minEdgeValue + ' ' +
         'RETURN DISTINCT r, n.label AS name_1, p.label AS name_2, r.edge_weight AS link order by r.edge_weight DESC'
     ).data()
 
