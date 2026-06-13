@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import $ from 'jquery'
-import { Burger, Group, Title } from '@mantine/core'
+import { Avatar, Group, Menu, Text, Title, UnstyledButton } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 
 import SideDrawer from './components/SideDrawer.jsx'
+import Login from './components/Login.jsx'
+import LogoMark from './components/LogoMark.jsx'
+import AccountModal from './components/AccountModal.jsx'
 import HelpModal from './components/HelpModal.jsx'
 import FiltersMenu from './components/FiltersMenu.jsx'
 import MainSection from './components/MainSection.jsx'
@@ -24,7 +27,8 @@ export default function App() {
   // ---- auth ----
   const [usr, setUsr] = useState('')
   const [drawerOpened, drawer] = useDisclosure(false)
-  const [helpOpened, help] = useDisclosure(true) // the old app opened the help modal on load
+  const [accountOpened, account] = useDisclosure(false)
+  const [helpOpened, help] = useDisclosure(false) // opens only via the Help menu item
 
   // ---- search parameters ----
   const [sn, setSn] = useState('mbox')
@@ -476,34 +480,85 @@ export default function App() {
   }
 
   // ---- render ----
+  // Logged-out: full-screen auth gate (no shell). The legacy modules only write
+  // into .content/.data after a search, which can't happen before login, so it
+  // is safe to withhold the shell DOM here.
+  if (usr === '') {
+    return (
+      <Login
+        onLogin={login}
+        onRegister={register}
+        loginFeedback={loginFeedback}
+        registerBtn={registerBtn}
+      />
+    )
+  }
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <Group component="nav" px="md" py={8} gap="sm" style={{ flexShrink: 0 }} bg="var(--mantine-color-dark-6)">
-        <Burger opened={drawerOpened} onClick={drawer.toggle} aria-label="Toggle drawer"
-          color="var(--mantine-primary-color-filled)" />
-        <Title order={3} style={{ cursor: 'default', color: 'var(--mantine-primary-color-filled)' }}>
-          Social Network Analysis
-        </Title>
+      <Group component="nav" px="md" py={8} gap="sm" justify="space-between"
+        style={{ flexShrink: 0 }} bg="var(--mantine-color-dark-6)">
+        <Group gap="sm" wrap="nowrap">
+          <LogoMark size={28} />
+          <Title order={3} style={{ cursor: 'default', color: 'var(--mantine-primary-color-filled)' }}>
+            Social Network Analysis
+          </Title>
+        </Group>
+
+        <Menu position="bottom-end" width={220} withinPortal>
+          <Menu.Target>
+            <UnstyledButton aria-label="Account menu">
+              <Group gap="xs" wrap="nowrap">
+                <Text size="sm" c="dark.1" visibleFrom="xs" style={{ wordBreak: 'break-all' }}>{usr}</Text>
+                <Avatar variant="filled" color="yellow" radius="xl" size="sm">
+                  {usr.slice(0, 2).toUpperCase()}
+                </Avatar>
+                <i className="material-icons" style={{ fontSize: 18, color: 'var(--mantine-color-dark-1)' }}>
+                  expand_more
+                </i>
+              </Group>
+            </UnstyledButton>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Label>Account</Menu.Label>
+            <Menu.Item onClick={drawer.open}
+              leftSection={<i className="material-icons" style={{ fontSize: 16 }}>storage</i>}>
+              Manage dumps
+            </Menu.Item>
+            <Menu.Item onClick={account.open}
+              leftSection={<i className="material-icons" style={{ fontSize: 16 }}>vpn_key</i>}>
+              Change password
+            </Menu.Item>
+            <Menu.Item onClick={help.open}
+              leftSection={<i className="material-icons" style={{ fontSize: 16 }}>help_outline</i>}>
+              Help
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item color="red" onClick={logout}
+              leftSection={<i className="material-icons" style={{ fontSize: 16 }}>logout</i>}>
+              Logout
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       </Group>
 
       <SideDrawer
         opened={drawerOpened}
         onClose={drawer.close}
-        usr={usr}
-        onLogin={login}
-        onRegister={register}
-        onLogout={logout}
-        onOpenHelp={() => { drawer.close(); help.open() }}
         onUpload={uploadDump}
         upload={upload}
         onDeleteDump={deleteDump}
         deleteFeedback={deleteFeedback}
+      />
+
+      <AccountModal
+        opened={accountOpened}
+        onClose={account.close}
+        usr={usr}
         onChangeMail={(a, b) => changeAccount('change-mail', a, b, setChangeMailBtn)}
         onChangePassword={(a, b) => changeAccount('change-password', a, b, setChangePassBtn)}
         changeMailBtn={changeMailBtn}
         changePassBtn={changePassBtn}
-        loginFeedback={loginFeedback}
-        registerBtn={registerBtn}
       />
 
       <HelpModal opened={helpOpened} onClose={help.close} />
