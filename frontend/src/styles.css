@@ -7,7 +7,7 @@ html, body, #root {
 
 .content {
     background-color: #d4d4d8;
-    border-radius: 8px 8px 0 0;
+    border-radius: 0;
     overflow: auto;
 }
 
@@ -18,7 +18,7 @@ html, body, #root {
 .navigation {
     background-color: #e4e4e7;
     color: #18181b;
-    border-radius: 0 0 8px 8px;
+    border-radius: 0;
     padding: 4px 12px;
     overflow: auto;
 }

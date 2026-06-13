@@ -172,8 +172,8 @@ export default function App() {
       success: (data) => {
         const min = epoch(data[0])
         const max = epoch(data[1])
-        const start = epoch(getTodayDate('notoday'))
-        const end = epoch(getTodayDate('today'))
+        const start = min
+        const end = max
 
         setNodeVal(0); setNodeMax(data[2])
         setEdgeVal(0); setEdgeMax(data[3])
@@ -449,7 +449,7 @@ export default function App() {
   // ---- render ----
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <Group component="nav" px="md" py={8} gap="sm" style={{ flexShrink: 0 }} bg="var(--mantine-color-dark-7)">
+      <Group component="nav" px="md" py={8} gap="sm" style={{ flexShrink: 0 }} bg="var(--mantine-color-dark-6)">
         <Burger opened={drawerOpened} onClick={drawer.toggle} aria-label="Toggle drawer"
           color="var(--mantine-primary-color-filled)" />
         <Title order={3} style={{ cursor: 'default', color: 'var(--mantine-primary-color-filled)' }}>

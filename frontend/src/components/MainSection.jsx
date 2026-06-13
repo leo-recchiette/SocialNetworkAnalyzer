@@ -67,8 +67,16 @@ export default function MainSection({
     disabled: dataViz2 === 'links' && o.value !== 'tagcount',
   }))
 
+  // 343A40 surface so the right-column tabs read as a panel over the 1F1F1F body
+  // (inactive labels stay light; the active label gets dark text on the yellow
+  // indicator via the theme's autoContrast)
+  const tabStyles = {
+    root: { background: 'var(--mantine-color-dark-6)', borderRadius: 0 },
+  }
+
   return (
-    <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: 12 }}>
+    <div style={{ display: 'flex', flex: 1, minHeight: 0, flexDirection: 'column' }}>
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: 12 }}>
       {/* left column: graph */}
       <div style={{ flex: 3, minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column' }}>
         <div style={{ position: 'absolute', top: 4, left: 8, right: 8, zIndex: 30 }}>
@@ -129,21 +137,6 @@ export default function MainSection({
 
         {/* imperative canvas - rendered into by neovis / openlayers / gantt */}
         <div className="content" style={{ flex: 1, minHeight: 0 }} />
-
-        <SegmentedControl
-          color="yellow"
-          fullWidth
-          value={graphType}
-          onChange={onGraphTypeChange}
-          data={[
-            { value: 'relNet', label: graphLabel('Relationships network', GRAPH_INFO.relNet) },
-            { value: 'trafficNet', label: graphLabel('Messages traffic network', GRAPH_INFO.trafficNet) },
-            { value: 'map', label: graphLabel('Map', GRAPH_INFO.map) },
-            { value: 'wordFrec', label: graphLabel('Word frequency', GRAPH_INFO.wordFrec) },
-          ]}
-          radius={0}
-          styles={{ root: { borderRadius: '0 0 8px 8px' } }}
-        />
       </div>
 
       {/* right column: data panel */}
@@ -160,7 +153,7 @@ export default function MainSection({
             { value: 'all', label: 'All', disabled: dataViz1Disabled('all') },
           ]}
           radius={0}
-          styles={{ root: { borderRadius: '8px 8px 0 0' } }}
+          styles={tabStyles}
         />
         <SegmentedControl
           color="yellow"
@@ -173,6 +166,7 @@ export default function MainSection({
             { value: 'links', label: 'Links', disabled: dataViz2Disabled('links') },
           ]}
           radius={0}
+          styles={tabStyles}
         />
         <Paper p={6} radius={0} withBorder>
           <Group gap="xs" wrap="nowrap">
@@ -194,6 +188,24 @@ export default function MainSection({
           <div className="data" />
         </div>
       </div>
+      </div>
+
+      {/* full-width graph-type selector, matching the top Menu box */}
+      <SegmentedControl
+        color="yellow"
+        fullWidth
+        mt={12}
+        value={graphType}
+        onChange={onGraphTypeChange}
+        data={[
+          { value: 'relNet', label: graphLabel('Relationships network', GRAPH_INFO.relNet) },
+          { value: 'trafficNet', label: graphLabel('Messages traffic network', GRAPH_INFO.trafficNet) },
+          { value: 'map', label: graphLabel('Map', GRAPH_INFO.map) },
+          { value: 'wordFrec', label: graphLabel('Word frequency', GRAPH_INFO.wordFrec) },
+        ]}
+        radius={0}
+        styles={tabStyles}
+      />
     </div>
   )
 }

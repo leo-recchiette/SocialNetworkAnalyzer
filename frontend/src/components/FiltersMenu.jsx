@@ -26,7 +26,7 @@ export default function FiltersMenu({
     : "Edge value rappresents how many times two people are tagged together by the dump's owner"
 
   return (
-    <Paper withBorder radius="md" mb="sm">
+    <Paper withBorder radius={0} mb="sm">
       <UnstyledButton onClick={toggle} w="100%" px="md" py={6}>
         <Group justify="space-between">
           <Text fw={500}>Menu</Text>
