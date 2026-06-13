@@ -1,25 +1,34 @@
 import $ from 'jquery'
+import Map from 'ol/Map'
+import View from 'ol/View'
+import TileLayer from 'ol/layer/Tile'
+import OSM from 'ol/source/OSM'
+import VectorLayer from 'ol/layer/Vector'
+import VectorSource from 'ol/source/Vector'
+import Feature from 'ol/Feature'
+import Point from 'ol/geom/Point'
+import { Style, Icon } from 'ol/style'
+import { fromLonLat, transform } from 'ol/proj'
+import 'ol/ol.css'
 import { sna } from './bridge.js'
 import { clearDataSpace } from './dom.js'
 import { dataVisualization } from './dataVisualization.js'
 
 function createWorldMap(data)
 {
-    const ol = window.ol;
-
     $('.content').html(
         '<div id="map" class="map" style="height: 100%; width: 100%"></div>'
     )
 
-    var map = new ol.Map({
+    var map = new Map({
         target: 'map',
         layers: [
-            new ol.layer.Tile({
-                source: new ol.source.OSM()
+            new TileLayer({
+                source: new OSM()
             })
         ],
-        view: new ol.View({
-            center: ol.proj.fromLonLat([12.51, 41.89]),
+        view: new View({
+            center: fromLonLat([12.51, 41.89]),
             zoom:6
         })
     });
@@ -33,12 +42,12 @@ function createWorldMap(data)
         var longitude = item.lng;
         var latitude = item.lat;
 
-        var iconFeature = new ol.Feature({
-            geometry: new ol.geom.Point(ol.proj.transform([longitude, latitude], 'EPSG:4326', 'EPSG:3857'))
+        var iconFeature = new Feature({
+            geometry: new Point(transform([longitude, latitude], 'EPSG:4326', 'EPSG:3857'))
         });
 
-        var iconStyle = new ol.style.Style({
-            image: new ol.style.Icon(({
+        var iconStyle = new Style({
+            image: new Icon(({
                 anchor: [0.5, 1],
                 src: "https://unpkg.com/leaflet@1.6.0/dist/images/marker-icon.png"
             }))
@@ -49,11 +58,11 @@ function createWorldMap(data)
 
     }
 
-    var vectorSource = new ol.source.Vector({
+    var vectorSource = new VectorSource({
         features: features
     });
 
-    var vectorLayer = new ol.layer.Vector({
+    var vectorLayer = new VectorLayer({
         source: vectorSource
     });
     map.addLayer(vectorLayer);
@@ -62,8 +71,8 @@ function createWorldMap(data)
         let features = map.getFeaturesAtPixel(evt.pixel);
         if (features.length > 0) {
             let coordinate = features[0].getGeometry().getCoordinates();
-            let lat = ol.proj.transform(coordinate, 'EPSG:3857', 'EPSG:4326')[0];
-            let lng = ol.proj.transform(coordinate, 'EPSG:3857', 'EPSG:4326')[1];
+            let lat = transform(coordinate, 'EPSG:3857', 'EPSG:4326')[0];
+            let lng = transform(coordinate, 'EPSG:3857', 'EPSG:4326')[1];
 
             sna.setDataViz1('selected');
             sna.setDataViz2('contacts');

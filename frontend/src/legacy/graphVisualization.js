@@ -1,238 +1,137 @@
 import $ from 'jquery'
+import Sigma from 'sigma'
+import forceAtlas2 from 'graphology-layout-forceatlas2'
+import FA2Layout from 'graphology-layout-forceatlas2/worker'
+import circular from 'graphology-layout/circular'
 import { sna } from './bridge.js'
 import { clearDataSpace } from './dom.js'
 import { dataVisualization } from './dataVisualization.js'
+import { toGraphology } from './graphAdapter.js'
 
-let viz;
+// Module singletons for the current render. drawGraph() runs on every search,
+// filter and slider change, so the previous Sigma renderer + ForceAtlas2 worker
+// must be torn down each time or WebGL contexts and workers leak.
+let graph = null
+let renderer = null
+let layout = null
 
-function stabilizeGraph()
-{
-    if (viz) viz.stabilize(); // to block the graph
+function destroyGraph() {
+  if (layout) {
+    try { layout.kill() } catch (e) { /* worker already gone */ }
+    layout = null
+  }
+  if (renderer) {
+    try { renderer.kill() } catch (e) { /* already killed */ }
+    renderer = null
+  }
+  graph = null
 }
 
-function getNodeDimension( sn, graphType )
-{
-    if (sn!=='twitter') return 'nodeDegree';
-
-    else
-    {
-        if (sn === 'twitter' && graphType==='trafficNet')
-            return sna.twNodeType;
-        else return 'nodeDegree'
-    }
+// Equivalent of the old neovis `viz.stabilize()`: freeze the live layout so the
+// nodes stop drifting (wired to the "Stop dynamic graph" button).
+function stabilizeGraph() {
+  if (layout) layout.stop()
 }
 
-function drawGraph(cmd, direction, dimension)
-{
-    $('.content').html('<div id="viz" style="height: 100%; width: 100%"></div>')
+function getNodeDimension(sn, graphType) {
+  if (sn !== 'twitter') return 'nodeDegree'
 
-    let config = {
-        container_id: "viz",
-        // neovis.js runs in the browser and talks to Neo4j directly over bolt.
-        // docker-compose maps the neo4j container's 7687 to localhost:7687, so
-        // "localhost" is correct from the user's machine. The password must match
-        // NEO4J_AUTH in docker-compose.yml (default: snapassword).
-        server_url: "bolt://localhost:7687",
-        server_user: "neo4j",
-        server_password: "snapassword",
-        arrows: direction,
-        labels: {
-            // facebook graph node
-            'Friend': {
-                'caption': 'name',
-                'size': dimension,
-            },
-            'RemovedFriend': {
-                'caption': 'name',
-                'size': dimension,
-            },
-            'Post': {
-                'caption': 'timestamp',
-                'size': dimension,
-            },
-            'FriendPost': {
-                'caption': 'timestamp',
-                'size': dimension
-            },
-            'Comment': {
-                'caption': 'timestamp',
-                'size': dimension
-            },
-            'Direct_Message': {
-                'caption': 'timestamp',
-                'size': dimension,
-            },
-            'fbUser': {
-                'caption': 'name',
-            },
-            // twitter graph node
-            'twUser': {
-                'caption': 'username'
-            },
-            'Liked_Tweet': {
-                'caption': 'tweet'
-            },
-            'Tweet': {
-                'caption': 'created_at',
-                'size' : dimension
-            },
-            'Retweet': {
-                'caption': 'created_at',
-                'size' : dimension
-            },
-            'BothFollowType': {
-                'caption': 'screen_name',
-                'size': dimension
-            },
-            'Follower': {
-                'caption': 'screen_name',
-                'size': dimension
-            },
-            'Following': {
-                'caption': 'screen_name',
-                'size': dimension
-            },
-            // mbox graph node
-            "Undirected_Node": {
-                "size": dimension,
-                "caption": "label"
-            },
-            "Directed_Node": {
-                "size": dimension,
-                "caption": "label"
-            }
-        },
-        relationships: {
-            // facebook graph relationships
-            "PUBLISHED": {
-                "thickness": "count",
-                "caption": false // to show the label
-            },
-            "TAGGED_IN": {
-                "thickness": "count",
-                "caption": false
-            },
-            "FRIEND": {
-                "thickness": "count",
-                "caption": false
-            },
-            "TAG": {
-                "thickness": "tagged_together",
-                "caption": false
-            },
-            "TAGGED_TOGETHER": {
-                "thickness": "tagged_together",
-                "caption": false
-            },
-            "FBUSERFRIEND": {
-                "thickness": "tagged_together",
-                "caption": false
-            },
-            // twitter graph relationships
-            "LIKED_TWEET": {
-                "thickness": "count",
-                "caption": false
-            },
-            "TWEETED": {
-                "thickness": "count",
-                "caption": false
-            },
-            "QUOTED": {
-                "thickness": "count",
-                "caption": false
-            },
-            "FOLLOW_FOR_ALL_USERS": {
-                "thickness": "count",
-                "caption": false
-            },
-            "FOLLOW": {
-                "thickness": "count",
-                "caption": false
-            },
-            "FOLLOWING": {
-                "thickness": "count",
-                "caption": false
-            },
-            "SAME_ACCOUNT": {
-                "thickness": "count",
-                "caption": false
-            },
-            // mbox graph relationships
-            "UNDIRECTED_EDGE": {
-                "thickness": "edge_weight",
-                "caption": false
-            },
-            "DIRECTED_EDGE": {
-                "thickness": "edge_weight",
-                "caption": false
-            }
+  else {
+    if (sn === 'twitter' && graphType === 'trafficNet')
+      return sna.twNodeType
+    else return 'nodeDegree'
+  }
+}
 
-        },
-        initial_cypher: cmd,
-    };
+// Reused by both node and edge clicks. `id` is the graphology key — i.e. the
+// Neo4j integer ID() as a string — handed straight back to getData.py, which
+// interpolates it into "ID(n) = <id>". `kind` is 'contacts' (node) or 'links' (edge).
+function handleSelect(id, kind) {
+  sna.setDataViz1('selected')
+  sna.setDataViz2(kind)
 
-    viz = new window.NeoVis.default(config);
-    viz.render();
+  let dts = JSON.parse(sna.dataToSearch)
+  dts['dataViz1'] = 'selected'
+  dts['dataViz2'] = kind
+  sna.dataToSearch = JSON.stringify(dts)
 
-    viz.registerOnEvent("completed", (e)=>{
-        viz["_network"].on("click", (event)=>{
-            let id;
-            let dts;
+  clearDataSpace()
 
-            sna.setDataViz1('selected');
+  $.ajax({
+    url: 'server.php',
+    dataType: 'json',
+    data: { dataToSearch: sna.dataToSearch, id },
+    type: 'post',
+    success: function (data) {
+      dataVisualization(data)
+    },
+    error: function () {
+      if (kind === 'contacts')
+        $('.data').append(
+          '<div class="data-item">' +
+            '<span> Try to select a node </span>' +
+          '</div>'
+        )
+      else
+        $('.data').append(
+          '<div class="data-item">' +
+          '<span> Try to select a link </span>' +
+          '</div>'
+        )
+    },
+  })
+}
 
-            if (event.nodes.length>0)
-            {
-                id = event.nodes[0];
-                sna.setDataViz2('contacts');
+function renderGraph(data, direction, dimension) {
+  const container = document.getElementById('viz')
+  if (!container) return
 
-                dts = JSON.parse(sna.dataToSearch);
-                dts['dataViz2'] = 'contacts';
-            }
-            else
-            {
-                id = event.edges[0];
-                sna.setDataViz2('links');
+  graph = toGraphology(data, dimension, direction)
 
-                dts = JSON.parse(sna.dataToSearch);
-                dts['dataViz2'] = 'links';
-            }
+  // Sigma requires every node to have x/y. circular gives a stable, non-overlapping
+  // starting ring; ForceAtlas2 then settles the real layout.
+  if (graph.order > 0) circular.assign(graph)
 
-            dts['dataViz1'] = 'selected';
+  renderer = new Sigma(graph, container, {
+    defaultEdgeType: direction ? 'arrow' : 'line',
+    renderEdgeLabels: false,
+    labelRenderedSizeThreshold: 1,
+    // Sigma v3 disables edge events by default (perf); without this clickEdge
+    // never fires and edges aren't selectable.
+    enableEdgeEvents: true,
+  })
 
-            sna.dataToSearch = JSON.stringify(dts);
+  // No point running the force simulation on a single node / empty graph.
+  if (graph.order > 1) {
+    layout = new FA2Layout(graph, { settings: forceAtlas2.inferSettings(graph) })
+    layout.start()
+  }
 
-            clearDataSpace();
+  renderer.on('clickNode', ({ node }) => handleSelect(node, 'contacts'))
+  renderer.on('clickEdge', ({ edge }) => handleSelect(edge, 'links'))
+}
 
-            $.ajax({
-                url: 'server.php',
-                dataType: 'json',
-                data: {dataToSearch: sna.dataToSearch, id},
-                type: 'post',
-                success: function (data) {
-                    dataVisualization (data);
-                },
-                error: function () {
-                    let selected = sna.dataViz2;
+function drawGraph(cmd, direction, dimension) {
+  destroyGraph()
 
-                    if (selected === 'contacts')
-                        $('.data').append(
-                            '<div class="data-item">' +
-                                '<span> Try to select a node </span>' +
-                            '</div>'
-                        );
-                    else
-                        $('.data').append(
-                            '<div class="data-item">' +
-                            '<span> Try to select a link </span>' +
-                            '</div>'
-                        );
+  $('.content').html('<div id="viz" style="height: 100%; width: 100%"></div>')
 
-                },
-            })
-        });
-    });
-
+  // The Cypher is run server-side (server.php -> runVizQuery.py) and returns
+  // {nodes, rels}; the browser no longer connects to Neo4j directly.
+  $.ajax({
+    url: 'server.php',
+    dataType: 'json',
+    data: { action: 'runQuery', cmd },
+    type: 'post',
+    success: function (data) {
+      renderGraph(data, direction, dimension)
+    },
+    error: function () {
+      $('.content').html(
+        '<div class="data-item"><span> Unable to draw the graph </span></div>'
+      )
+    },
+  })
 }
 
 export { drawGraph, getNodeDimension, stabilizeGraph }

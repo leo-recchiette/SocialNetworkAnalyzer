@@ -135,7 +135,7 @@ export default function MainSection({
           </Group>
         </div>
 
-        {/* imperative canvas - rendered into by neovis / openlayers / gantt */}
+        {/* imperative canvas - rendered into by sigma / openlayers / echarts */}
         <div className="content" style={{ flex: 1, minHeight: 0 }} />
       </div>
 

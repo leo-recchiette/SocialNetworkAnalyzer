@@ -8,16 +8,8 @@
     <!-- Material icons: the legacy data panel still injects <i class="material-icons"> -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons">
 
-    <!-- openLayers (global `ol`) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.3.1/css/ol.css" type="text/css">
-    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.3.1/build/ol.js"></script>
-
-    <!-- neovis.js (global `NeoVis`) - talks to Neo4j directly over bolt -->
-    <script src="https://cdn.neo4jlabs.com/neovis.js/v1.4.0/neovis.js"></script>
-
-    <!-- frappe-gantt (global `Gantt`), vendored to keep the exact legacy version -->
-    <link rel="stylesheet" href="./vendor/gantt/frappe-gantt.css">
-    <script src="./vendor/gantt/frappe-gantt.js"></script>
+    <!-- The visualization libraries (sigma + graphology, openlayers, echarts) are
+         now bundled by Vite via npm imports instead of loaded as CDN globals. -->
 </head>
 <body>
     <div id="root"></div>

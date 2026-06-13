@@ -9,10 +9,11 @@
 #   mysql    MySQL 5.7 (users + word_frequency tables)        -> localhost:3306
 #   adminer  optional web UI for the MySQL side               -> http://localhost:8081
 #
-# The passwords here are DEV defaults. If you change NEO4J_PASSWORD you must
-# ALSO edit static/visualization/graphVisualization/graphVisualization.js
-# (server_password): that value is shipped to the browser, which connects to
-# Neo4j directly over Bolt and cannot read these environment variables.
+# The passwords here are DEV defaults. NEO4J_PASSWORD is read server-side by
+# server/dbConnector.py (from the env) for every Neo4j access, including the
+# graph visualization, which now proxies its Cypher through server.php ->
+# runVizQuery.py instead of connecting from the browser. So changing it here is
+# enough — no frontend value to keep in sync anymore.
 
 services:
   app:
@@ -51,7 +52,7 @@ services:
     container_name: sna_neo4j
     ports:
       - "7474:7474"   # Neo4j Browser (HTTP)
-      - "7687:7687"   # Bolt — the browser's neovis.js connects to bolt://localhost:7687
+      - "7687:7687"   # Bolt — used by the backend (dbConnector.py) and cypher-shell/Neo4j Browser
     environment:
       NEO4J_AUTH: "neo4j/snapassword"
       # Auto-download APOC on first boot (needs outbound internet that one time).

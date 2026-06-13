@@ -6,7 +6,7 @@ export const sna = {
   // current search context (mirrors React state)
   dataToSearch: '',
   usr: '',
-  sn: 'facebook',
+  sn: 'mbox',
   dataViz1: 'selected',
   dataViz2: 'contacts',
 

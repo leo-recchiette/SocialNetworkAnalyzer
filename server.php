@@ -78,8 +78,11 @@
     {
         $user = escapeshellarg($_POST['usr']);
         $sn = escapeshellarg($_POST['sn']);
+        // graphType scopes the node/edge slider maxima to the current view
+        // (relNet = people, trafficNet = content); default relNet if absent.
+        $graphType = escapeshellarg(isset($_POST['graphType']) ? $_POST['graphType'] : 'relNet');
 
-        $output = shell_exec('python '.$SNA_BASE.'/server/getValueForSearching.py '. $user.' '. $sn .' 2>&1');
+        $output = shell_exec('python '.$SNA_BASE.'/server/getValueForSearching.py '. $user.' '. $sn .' '. $graphType .' 2>&1');
 
         echo $output;
     }
@@ -231,4 +234,16 @@
              echo $output;
         }
 
+    }
+
+    // run a Cypher query (built by the frontend's allQueries.js) and return the
+    // resulting graph as {nodes, rels} JSON for the Sigma.js visualization. This
+    // replaces neovis.js's direct browser->bolt connection: the DB password now
+    // stays server-side (in dbConnector via the environment) instead of shipping
+    // to every browser.
+    if (isset($_POST['action']) && $_POST['action'] == 'runQuery' && isset($_POST['cmd']))
+    {
+        $cmd = escapeshellarg($_POST['cmd']);
+        $output = shell_exec('python -W ignore '.$SNA_BASE.'/server/dataSearcher/runVizQuery.py '.$cmd.' 2>&1');
+        echo $output;
     }

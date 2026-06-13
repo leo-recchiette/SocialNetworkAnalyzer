@@ -27,7 +27,7 @@ export default function App() {
   const [helpOpened, help] = useDisclosure(true) // the old app opened the help modal on load
 
   // ---- search parameters ----
-  const [sn, setSn] = useState('facebook')
+  const [sn, setSn] = useState('mbox')
   const [keyword, setKeyword] = useState('')
   const [person, setPerson] = useState('')
   const [nodeVal, setNodeVal] = useState(1)
@@ -163,11 +163,11 @@ export default function App() {
     if (s.graphType !== 'wordFrec') getDataAjax(ntd)
   }
 
-  function setSliders(usrArg, snArg) {
+  function setSliders(usrArg, snArg, graphTypeArg) {
     $.ajax({
       url: 'server.php',
       dataType: 'json',
-      data: { usr: usrArg, sn: snArg },
+      data: { usr: usrArg, sn: snArg, graphType: graphTypeArg },
       type: 'post',
       success: (data) => {
         const min = epoch(data[0])
@@ -175,8 +175,9 @@ export default function App() {
         const start = min
         const end = max
 
-        setNodeVal(0); setNodeMax(data[2])
-        setEdgeVal(0); setEdgeMax(data[3])
+        // Math.max(1, ...) avoids a degenerate max=0 slider on an empty view.
+        setNodeVal(0); setNodeMax(Math.max(1, data[2]))
+        setEdgeVal(0); setEdgeMax(Math.max(1, data[3]))
         setDateBounds([min, max])
         setDateRange([start, end])
 
@@ -185,6 +186,34 @@ export default function App() {
       error: () => {
         sna.dataToSearch = ''
         noDataFoundVisualization()
+      },
+    })
+  }
+
+  // Refresh ONLY the node/edge slider bounds for a new graph view (relNet and
+  // trafficNet have different maxima — people vs content). The date range is
+  // left untouched, and current filter values are clamped to the new max so the
+  // slider never exceeds what the visible graph actually contains.
+  function refreshBounds(usrArg, snArg, graphTypeArg) {
+    $.ajax({
+      url: 'server.php',
+      dataType: 'json',
+      data: { usr: usrArg, sn: snArg, graphType: graphTypeArg },
+      type: 'post',
+      success: (data) => {
+        const nodeMaxNew = Math.max(1, data[2])
+        const edgeMaxNew = Math.max(1, data[3])
+        const nv = Math.min(paramsRef.current.nodeVal, nodeMaxNew)
+        const ev = Math.min(paramsRef.current.edgeVal, edgeMaxNew)
+
+        setNodeMax(nodeMaxNew); setEdgeMax(edgeMaxNew)
+        setNodeVal(nv); setEdgeVal(ev)
+
+        setEnvironment({ graphType: graphTypeArg, nodeVal: nv, edgeVal: ev })
+      },
+      error: () => {
+        // bounds fetch failed: still draw the new view with the current values
+        setEnvironment({ graphType: graphTypeArg })
       },
     })
   }
@@ -201,7 +230,7 @@ export default function App() {
         if (data['value'] === 1) {
           const u = data['user_mail']
           setUsr(u)
-          setSliders(u, paramsRef.current.sn)
+          setSliders(u, paramsRef.current.sn, paramsRef.current.graphType)
         } else if (data['value'] === -1) {
           setLoginFeedback({ field: 'password', msg: 'Wrong password' })
           setTimeout(() => setLoginFeedback({ field: null, msg: null }), 3000)
@@ -288,7 +317,7 @@ export default function App() {
       },
       beforeSend: () => setUpload((u) => ({ ...u, visible: true, progress: 0, msg: '' })),
       success: (php_script_response) => {
-        setSliders(paramsRef.current.usr, paramsRef.current.sn)
+        setSliders(paramsRef.current.usr, paramsRef.current.sn, paramsRef.current.graphType)
         console.log(php_script_response)
         clearContentSpace()
         clearDataSpace()
@@ -351,7 +380,7 @@ export default function App() {
     if (sna.dataToSearch !== '') dtsSn = JSON.parse(sna.dataToSearch)['sn']
 
     if (s.sn === dtsSn) setEnvironment()
-    else setSliders(s.usr, s.sn)
+    else setSliders(s.usr, s.sn, s.graphType)
   }
 
   // ---- data panel tabs ----
@@ -501,7 +530,13 @@ export default function App() {
           active={usr !== ''}
           sn={sn}
           graphType={graphType}
-          onGraphTypeChange={(v) => { setGraphType(v); setEnvironment({ graphType: v }) }}
+          onGraphTypeChange={(v) => {
+            setGraphType(v)
+            // relNet/trafficNet have different node/edge maxima: refetch the
+            // view-scoped bounds. map/wordFrec don't use these sliders.
+            if (v === 'relNet' || v === 'trafficNet') refreshBounds(usr, sn, v)
+            else setEnvironment({ graphType: v })
+          }}
           fbUserType={fbUserType} onFbUserType={(v) => { setFbUserType(v); setEnvironment({ fbUserType: v }) }}
           fbNodeType={fbNodeType} onFbNodeType={(v) => { setFbNodeType(v); setEnvironment({ fbNodeType: v }) }}
           fbMap={fbMap} onFbMap={(v) => { setFbMap(v); setEnvironment({ fbMap: v }) }}
