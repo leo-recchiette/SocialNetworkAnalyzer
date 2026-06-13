@@ -88,10 +88,48 @@ Docker.
    export NEO4J_HOST=localhost NEO4J_PORT=7687 NEO4J_USER=neo4j NEO4J_PASSWORD=yourpassword
    export MYSQL_HOST=127.0.0.1 MYSQL_PORT=3306 MYSQL_USER=root MYSQL_PASSWORD=yourpassword MYSQL_DATABASE=sna_tool
    ````
-   The browser-side graph also needs the Neo4j password: set `server_password`
-   in `static/visualization/graphVisualization/graphVisualization.js`.
+   The browser no longer connects to Neo4j directly, so there is **no separate
+   frontend password to set**: the graph visualization's Cypher is proxied
+   through `server.php` (`action: runQuery`) to
+   `server/dataSearcher/runVizQuery.py`, which uses the same env-driven
+   `server/dbConnector.py`.
 
    * If you have some problem with the installed packages, set `PYTHONPATH` to include `server/` and `server/dataSearcher/nlp/` (the `sys.path.append('~/...')` lines in the scripts do not work — `~` is not expanded). Also check the `mbox.php`/`mimeDecode.php` (PEAR) include path used by ```server.php```.
+
+### 4. Build and serve the frontend ###
+   The UI is a **React + Mantine** app under [`frontend/`](frontend/), built
+   with Vite. Build it and serve the static output together with `server.php`
+   from a single PHP docroot:
+   ````
+   cd frontend
+   npm install
+   npm run build          # outputs to dist/
+   cd ..
+   php -S localhost:8000  # serve dist/ + server.php + server/ from one docroot
+   ````
+   For frontend-only work you can instead run `npm run dev`, which proxies
+   `/server.php` to a running Docker stack on `:8080` (see
+   [frontend/vite.config.js](frontend/vite.config.js)).
+
+# Sample dataset #
+
+The [`dataset/enron/`](dataset/enron/) folder ships two ready-to-use mailbox
+dumps for quick, preliminary tests — no need to export your own data first.
+They are subsets of the public **Enron email corpus** in `.mbox` format, so the
+app routes them to the mbox uploader (`mboxDumpUploader.py`) automatically (the
+dispatcher picks the dumper by file extension / name).
+
+| File | Mailbox (`X-Origin`) | Messages | Size | Date span |
+| --- | --- | --- | --- | --- |
+| `mbox-enron-white-s-all.mbox` | Sally White (`WHITE-S`) | ~3,266 | 6.0 MB | 29 Nov 2000 – 6 Feb 2002 |
+| `mbox-enron-smith-m-all.mbox` | Matt Smith (`SMITH-M`) | ~1,642 | 3.1 MB | 1 Aug 2000 – 8 Jan 2002 |
+
+To try one, start the stack, register/log in, and upload the `.mbox` file
+through the app's upload form. Once it has been loaded into Neo4j you can
+explore its relationship/traffic networks, map, timeline, and word frequency.
+
+> **Note:** the date sliders/filters only return results inside each dump's date
+> span shown above — filtering to a window outside it yields an empty graph.
 
 # The Application #
 
