@@ -76,6 +76,24 @@ export default function MainSection({
 
   return (
     <div style={{ display: 'flex', flex: 1, minHeight: 0, flexDirection: 'column' }}>
+      {/* graph-type selector: a contextual menu box above the two panels */}
+      <Paper p={6} radius={0} withBorder mb={12}>
+        <SegmentedControl
+          color="yellow"
+          fullWidth
+          value={graphType}
+          onChange={onGraphTypeChange}
+          data={[
+            { value: 'relNet', label: graphLabel('Relationships network', GRAPH_INFO.relNet) },
+            { value: 'trafficNet', label: graphLabel('Messages traffic network', GRAPH_INFO.trafficNet) },
+            { value: 'map', label: graphLabel('Map', GRAPH_INFO.map) },
+            { value: 'wordFrec', label: graphLabel('Word frequency', GRAPH_INFO.wordFrec) },
+          ]}
+          radius={0}
+          styles={tabStyles}
+        />
+      </Paper>
+
       <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: 12 }}>
       {/* left column: graph */}
       <div style={{ flex: 3, minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column' }}>
@@ -189,23 +207,6 @@ export default function MainSection({
         </div>
       </div>
       </div>
-
-      {/* full-width graph-type selector, matching the top Menu box */}
-      <SegmentedControl
-        color="yellow"
-        fullWidth
-        mt={12}
-        value={graphType}
-        onChange={onGraphTypeChange}
-        data={[
-          { value: 'relNet', label: graphLabel('Relationships network', GRAPH_INFO.relNet) },
-          { value: 'trafficNet', label: graphLabel('Messages traffic network', GRAPH_INFO.trafficNet) },
-          { value: 'map', label: graphLabel('Map', GRAPH_INFO.map) },
-          { value: 'wordFrec', label: graphLabel('Word frequency', GRAPH_INFO.wordFrec) },
-        ]}
-        radius={0}
-        styles={tabStyles}
-      />
     </div>
   )
 }

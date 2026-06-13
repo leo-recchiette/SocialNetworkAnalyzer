@@ -2,3 +2,4 @@
 CLAUDE.md
 frontend/node_modules/
 dist/
+.claude/skills/

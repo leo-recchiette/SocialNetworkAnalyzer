@@ -1,10 +1,35 @@
 import {
-  Button, Collapse, Grid, Group, Paper, RangeSlider, Select, Slider, Text, TextInput, Tooltip, UnstyledButton,
+  Badge, Button, Collapse, Divider, Grid, Group, Paper, RangeSlider,
+  Select, Slider, Stack, Text, TextInput, Tooltip, UnstyledButton,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { epochToDateLabel } from '../utils.js'
 
 const DAY = 86400
+
+const icon = (name, size = 16, extra = {}) =>
+  <i className="material-icons" style={{ fontSize: size, ...extra }}>{name}</i>
+
+// A numeric/text value chip — mono face, matching the brand's "mono for data".
+const ValueChip = ({ children }) => (
+  <Badge variant="default" radius={0} size="sm"
+    styles={{ label: { fontFamily: 'var(--mantine-font-family-monospace)', fontWeight: 600, textTransform: 'none' } }}>
+    {children}
+  </Badge>
+)
+
+// Header row for a slider: label + info tooltip on the left, current value on the right.
+const FieldLabel = ({ label, info, children }) => (
+  <Group justify="space-between" wrap="nowrap" mb={6}>
+    <Group gap={6} wrap="nowrap">
+      <Text size="sm" fw={600}>{label}</Text>
+      <Tooltip label={info} multiline w={280} withArrow>
+        {icon('info', 14, { cursor: 'help', opacity: 0.55 })}
+      </Tooltip>
+    </Group>
+    {children}
+  </Group>
+)
 
 // Collapsible filter panel: node/edge sliders, the dual-handle date RangeSlider,
 // keyword/person search and the social network selector.
@@ -27,91 +52,98 @@ export default function FiltersMenu({
 
   return (
     <Paper withBorder radius={0} mb="sm">
-      <UnstyledButton onClick={toggle} w="100%" px="md" py={6}>
+      <UnstyledButton className="sna-menu-toggle" onClick={toggle} w="100%" px="md" py={10}>
         <Group justify="space-between">
-          <Text fw={500}>Menu</Text>
-          <i className="material-icons">{opened ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}</i>
+          <Group gap={8} wrap="nowrap">
+            {icon('tune', 18, { color: 'var(--mantine-primary-color-filled)' })}
+            <Text fw={600}>Menu</Text>
+          </Group>
+          {icon('expand_more', 22, {
+            transition: 'transform 150ms ease',
+            transform: opened ? 'rotate(180deg)' : 'none',
+            opacity: 0.7,
+          })}
         </Group>
       </UnstyledButton>
 
       <Collapse in={opened}>
-        <Grid p="md" pt={0}>
+        <Divider />
+        <Grid p="md" gutter="lg">
           <Grid.Col span={{ base: 12, lg: 8 }}>
-            <Grid>
-              <Grid.Col span={{ base: 12, lg: 6 }}>
-                <Group gap={6}>
-                  <Text size="sm" fw={700}>Min Node Value:</Text>
-                  <Text size="sm">{nodeVal}</Text>
-                  <Tooltip label={nodeInfo} multiline w={280}>
-                    <i className="material-icons" style={{ fontSize: 14, cursor: 'help' }}>info</i>
-                  </Tooltip>
-                </Group>
-                <Slider min={0} max={nodeMax} value={nodeVal}
+            <Grid gutter="lg">
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <FieldLabel label="Min Node Value" info={nodeInfo}>
+                  <ValueChip>{nodeVal}</ValueChip>
+                </FieldLabel>
+                <Slider min={0} max={nodeMax} value={nodeVal} thumbSize={16}
                   onChange={onNodeChange} onChangeEnd={onNodeChangeEnd} size="sm" />
               </Grid.Col>
-              <Grid.Col span={{ base: 12, lg: 6 }}>
-                <Group gap={6}>
-                  <Text size="sm" fw={700}>Min Edges Value:</Text>
-                  <Text size="sm">{edgeVal}</Text>
-                  <Tooltip label={edgeInfo} multiline w={280}>
-                    <i className="material-icons" style={{ fontSize: 14, cursor: 'help' }}>info</i>
-                  </Tooltip>
-                </Group>
-                <Slider min={0} max={edgeMax} value={edgeVal}
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <FieldLabel label="Min Edges Value" info={edgeInfo}>
+                  <ValueChip>{edgeVal}</ValueChip>
+                </FieldLabel>
+                <Slider min={0} max={edgeMax} value={edgeVal} thumbSize={16}
                   onChange={onEdgeChange} onChangeEnd={onEdgeChangeEnd} size="sm" />
               </Grid.Col>
             </Grid>
 
-            <Group gap={6} mt="md">
-              <Text size="sm" fw={700}>Date range:</Text>
-              <Text size="sm">{epochToDateLabel(dateRange[0])} - {epochToDateLabel(dateRange[1])}</Text>
-            </Group>
-            <RangeSlider
-              min={dateBounds[0]}
-              max={dateBounds[1]}
-              step={DAY}
-              minRange={DAY}
-              value={dateRange}
-              onChange={onDateChange}
-              onChangeEnd={onDateChangeEnd}
-              label={epochToDateLabel}
-              size="sm"
-            />
+            <Stack gap={6} mt="lg">
+              <FieldLabel label="Date range">
+                <ValueChip>{epochToDateLabel(dateRange[0])} → {epochToDateLabel(dateRange[1])}</ValueChip>
+              </FieldLabel>
+              <RangeSlider
+                min={dateBounds[0]}
+                max={dateBounds[1]}
+                step={DAY}
+                minRange={DAY}
+                value={dateRange}
+                onChange={onDateChange}
+                onChangeEnd={onDateChangeEnd}
+                label={epochToDateLabel}
+                thumbSize={16}
+                size="sm"
+              />
+            </Stack>
           </Grid.Col>
 
-          <Grid.Col span={{ base: 12, lg: 2 }}>
-            <TextInput
-              placeholder="Search a keyword"
-              leftSection={<i className="material-icons" style={{ fontSize: 16 }}>edit</i>}
-              value={keyword}
-              onChange={(e) => onKeywordChange(e.currentTarget.value)}
-              mb="sm"
-              size="sm"
-            />
-            <TextInput
-              placeholder="Search a name"
-              leftSection={<i className="material-icons" style={{ fontSize: 16 }}>person</i>}
-              value={person}
-              onChange={(e) => onPersonChange(e.currentTarget.value)}
-              size="sm"
-            />
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, lg: 2 }}>
-            <Select
-              leftSection={<i className="material-icons" style={{ fontSize: 16 }}>people</i>}
-              data={[
-                { value: 'facebook', label: 'Facebook' },
-                { value: 'twitter', label: 'Twitter' },
-                { value: 'mbox', label: 'Mail box' },
-              ]}
-              value={sn}
-              onChange={(v) => v && onSnChange(v)}
-              allowDeselect={false}
-              mb="sm"
-              size="sm"
-            />
-            <Button fullWidth color={searchBtn.color} onClick={onSearch}>{searchBtn.label}</Button>
+          <Grid.Col span={{ base: 12, lg: 4 }}>
+            <Grid>
+              <Grid.Col span={6}>
+                <Stack gap="sm">
+                  <TextInput
+                    placeholder="Search a keyword"
+                    leftSection={icon('edit')}
+                    value={keyword}
+                    onChange={(e) => onKeywordChange(e.currentTarget.value)}
+                  />
+                  <TextInput
+                    placeholder="Search a name"
+                    leftSection={icon('person')}
+                    value={person}
+                    onChange={(e) => onPersonChange(e.currentTarget.value)}
+                  />
+                </Stack>
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <Stack gap="sm">
+                  <Select
+                    leftSection={icon('people')}
+                    data={[
+                      { value: 'facebook', label: 'Facebook' },
+                      { value: 'twitter', label: 'Twitter' },
+                      { value: 'mbox', label: 'Mail box' },
+                    ]}
+                    value={sn}
+                    onChange={(v) => v && onSnChange(v)}
+                    allowDeselect={false}
+                  />
+                  <Button fullWidth color={searchBtn.color} onClick={onSearch}
+                    leftSection={icon('search')}>
+                    {searchBtn.label}
+                  </Button>
+                </Stack>
+              </Grid.Col>
+            </Grid>
           </Grid.Col>
         </Grid>
       </Collapse>
