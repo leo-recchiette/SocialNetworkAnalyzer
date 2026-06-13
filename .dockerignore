@@ -14,9 +14,6 @@ uploads/*/
 # Compiled Python — regenerated inside the container against its own interpreter
 **/*.pyc
 
-# JS plugin dev cruft (the built dist/ files we serve are kept)
+# Frontend build artifacts (re-created inside the node build stage)
 **/node_modules
-static/plugins/**/__tests__
-static/plugins/**/__mocks__
-static/plugins/**/.circleci
-static/plugins/**/.git*
+dist/

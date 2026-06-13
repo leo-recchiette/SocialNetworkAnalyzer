@@ -1,9 +1,26 @@
 # syntax=docker/dockerfile:1
 #
-# The app is a PHP gateway (server.php) + a static frontend that shells out to
-# Python 2.7 scripts on the SAME filesystem (PHP `shell_exec('python ...')`).
-# Both runtimes must therefore live in one image. Base = official PHP 7.4 +
-# Apache on Debian 11 "bullseye", which still ships python2 via apt.
+# The app is a PHP gateway (server.php) + a React/Mantine frontend (built by
+# the node stage below) that shells out to Python 2.7 scripts on the SAME
+# filesystem (PHP `shell_exec('python ...')`). PHP and Python must therefore
+# live in one image. Base = official PHP 7.4 + Apache on Debian 11 "bullseye",
+# which still ships python2 via apt.
+
+# ---------------------------------------------------------------------------
+# Stage 1: build the React/Mantine frontend (Vite). Output: /app/dist
+# ---------------------------------------------------------------------------
+FROM node:20-alpine AS frontend
+WORKDIR /app
+COPY frontend/package.json ./
+RUN npm install
+COPY frontend/ ./
+# vite.config.js sets outDir ../dist, which inside this stage is /dist - keep
+# everything under /app instead
+RUN npm run build -- --outDir /app/dist --emptyOutDir
+
+# ---------------------------------------------------------------------------
+# Stage 2: PHP + Python runtime image
+# ---------------------------------------------------------------------------
 FROM php:7.4-apache
 
 # ---------------------------------------------------------------------------
@@ -64,10 +81,12 @@ COPY docker/php/sna.ini /usr/local/etc/php/conf.d/sna.ini
 # Application code. Explicit COPYs (not `COPY .`) keep the Dockerfile,
 # docker-compose.yml and docker/ — which contain dev passwords — out of the
 # web-served docroot. .dockerignore drops .pyc/.git/uploaded dumps.
+# The frontend (index.html + hashed assets/ + vendor/) comes from the node
+# build stage.
 # ---------------------------------------------------------------------------
-COPY index.html server.php /var/www/html/
+COPY server.php /var/www/html/
+COPY --from=frontend /app/dist/ /var/www/html/
 COPY server/ /var/www/html/server/
-COPY static/ /var/www/html/static/
 COPY uploads/ /var/www/html/uploads/
 
 # Python import roots. The in-repo `sys.path.append('~/...')` lines never
