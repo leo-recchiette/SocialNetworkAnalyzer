@@ -9,8 +9,8 @@ export default function LogoMark({ size = 28 }) {
         <line x1="24" y1="7.5" x2="24.5" y2="24" />
       </g>
       <circle cx="10.5" cy="16" r="5" fill="var(--mantine-color-yellow-4)" />
-      <circle cx="24" cy="7.5" r="3.4" fill="#e6c044" />
-      <circle cx="24.5" cy="24" r="2.8" fill="#cda730" />
+      <circle cx="24" cy="7.5" r="3.4" fill="var(--mantine-color-yellow-4)" />
+      <circle cx="24.5" cy="24" r="2.8" fill="var(--mantine-color-yellow-4)" />
     </svg>
   )
 }

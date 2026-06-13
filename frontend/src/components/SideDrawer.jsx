@@ -1,38 +1,27 @@
 import { useRef, useState } from 'react'
 import {
-  ActionIcon, Button, Divider, Drawer, FileButton, Group,
+  Button, Checkbox, Divider, Drawer, FileButton, Group,
   Progress, Radio, Stack, Text, Tooltip,
 } from '@mantine/core'
+
+const ALL_SOURCES = ['facebook', 'twitter', 'mbox']
 
 // Dump-management drawer (opened from the navbar account menu): upload a new
 // dump and delete existing ones. Account settings live in AccountModal.
 export default function SideDrawer({ opened, onClose, onUpload, upload, onDeleteDump, deleteFeedback }) {
   const [file, setFile] = useState(null)
   const [wordFrecOption, setWordFrecOption] = useState('false')
-  const [socialToDelete, setSocialToDelete] = useState(null)
+  const [selected, setSelected] = useState([]) // dumps checked for removal
   const resetRef = useRef(null)
 
-  const dumpRow = (value, label) => (
-    <Group key={value} justify="space-between" wrap="nowrap" py={4}>
-      <Radio
-        size="xs"
-        value={value}
-        label={deleteFeedback && deleteFeedback.target === value
-          ? <Text span c="red" size="sm">{deleteFeedback.msg}</Text>
-          : label}
-        checked={socialToDelete === value}
-        onChange={() => setSocialToDelete(value)}
-      />
-      <ActionIcon
-        variant="subtle"
-        color="red"
-        aria-label={'delete ' + label}
-        onClick={() => { if (socialToDelete === value) onDeleteDump(value) }}
-      >
-        <i className="material-icons" style={{ fontSize: 18 }}>delete_forever</i>
-      </ActionIcon>
-    </Group>
-  )
+  // Delete every checked dump. Picking all of them maps to the backend's "all"
+  // shortcut; otherwise delete each selected source.
+  const deleteSelected = () => {
+    if (selected.length === 0) return
+    if (ALL_SOURCES.every((v) => selected.includes(v))) onDeleteDump('all')
+    else selected.forEach((v) => onDeleteDump(v))
+    setSelected([])
+  }
 
   return (
     <Drawer opened={opened} onClose={onClose} title={<b>Manage dumps</b>} padding="md" size={340}>
@@ -92,10 +81,24 @@ export default function SideDrawer({ opened, onClose, onUpload, upload, onDelete
 
         <div>
           <Text fw={700} size="sm" mb="xs">Delete your dumps</Text>
-          {dumpRow('facebook', 'Facebook')}
-          {dumpRow('twitter', 'Twitter')}
-          {dumpRow('mbox', 'Mailbox')}
-          {dumpRow('all', 'Delete all')}
+          <Checkbox.Group value={selected} onChange={setSelected}>
+            <Text size="xs" c="dimmed" mb="xs">Select the dumps to remove</Text>
+            <Stack gap="xs">
+              <Checkbox value="facebook" label="Facebook" />
+              <Checkbox value="twitter" label="Twitter" />
+              <Checkbox value="mbox" label="Mailbox" />
+            </Stack>
+          </Checkbox.Group>
+
+          <Button fullWidth color="red" mt="md" disabled={selected.length === 0}
+            leftSection={<i className="material-icons" style={{ fontSize: 16 }}>delete_forever</i>}
+            onClick={deleteSelected}>
+            Delete selected
+          </Button>
+
+          {deleteFeedback && (
+            <Text size="xs" c="dimmed" ta="center" mt="xs">{deleteFeedback.msg}</Text>
+          )}
         </div>
       </Stack>
     </Drawer>
