@@ -21,7 +21,7 @@ def getFbContent(word, start_date, end_date):
             'WHERE ' +
             ' exists (f.content) AND ' +
             ' w.word =\'' + word + '\' AND '
-            ' (ANY(word IN split(f.content, \' \') WHERE word = w.word)) AND '                                   
+            ' (ANY(word IN split(toLower(f.content), \' \') WHERE word = w.word)) AND '
             ' (f.timestamp>\'' + start_date + '\' AND f.timestamp<\'' + end_date + '\') ' +
             'RETURN f as node, w.userProfileProperty as propertyDump'
         ).data()
@@ -33,7 +33,7 @@ def getTwContent(word, start_date, end_date):
         'WHERE ' +
         ' exists (f.full_text) AND ' +
         ' w.word =\'' + word + '\' AND '
-        ' ANY(word IN split(f.full_text, \' \') WHERE word = w.word ) AND '                               
+        ' ANY(word IN split(toLower(f.full_text), \' \') WHERE word = w.word ) AND '
         ' (f.created_at>\'' + start_date + '\' AND f.created_at<\'' + end_date + '\') ' +
         'RETURN f as node, w.userProfileProperty as propertyDump'
     ).data()
@@ -45,7 +45,7 @@ def getMboxContent(word, start_date, end_date):
         'WHERE ' +
         ' exists (m.content) AND ' +
         ' w.word =\'' + word + '\' AND '
-        ' ANY(word IN split(m.content, \' \') WHERE word = w.word ) AND '                               
+        ' ANY(word IN split(toLower(m.content), \' \') WHERE word = w.word ) AND '
         ' (m.time>\'' + start_date + '\' AND m.time<\'' + end_date + '\') ' +
         'RETURN m as node, w.userProfileProperty as propertyDump'
     ).data()

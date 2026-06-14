@@ -21,4 +21,9 @@ export const sna = {
   // installed by React: switch the data panel tabs from legacy code
   setDataViz1: () => {},
   setDataViz2: () => {},
+
+  // installed by DataPanelHost: render a React node into the (light) .data
+  // island. Legacy modules build the node and push it here instead of writing
+  // HTML into .data, so the panel stays inside the main React tree.
+  setDataPanel: () => {},
 }

@@ -1,4 +1,5 @@
 import { ActionIcon, Group, Paper, Radio, SegmentedControl, Select, Text, Tooltip } from '@mantine/core'
+import DataPanelHost from './DataPanelHost.jsx'
 
 const GRAPH_INFO = {
   relNet: "The relathionship graph shows how the people are added and tagged by dump's owner in a selected range of time. " +
@@ -201,9 +202,9 @@ export default function MainSection({
           </Group>
         </Paper>
 
-        {/* imperative panel - rendered into by dataVisualization.js */}
+        {/* data panel - React-owned; legacy modules push content via sna.setDataPanel */}
         <div className="navigation" style={{ flex: 1, minHeight: 0 }}>
-          <div className="data" />
+          <DataPanelHost />
         </div>
       </div>
       </div>

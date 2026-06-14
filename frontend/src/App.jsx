@@ -12,7 +12,7 @@ import FiltersMenu from './components/FiltersMenu.jsx'
 import MainSection from './components/MainSection.jsx'
 
 import { sna } from './legacy/bridge.js'
-import { clearDataSpace, clearContentSpace, noDataFoundVisualization, showDataSpinner } from './legacy/dom.js'
+import { clearDataSpace, clearContentSpace, noDataFoundVisualization, showDataSpinner, showDataHint } from './legacy/dom.js'
 import { createQueryForDrawing } from './legacy/allQueries.js'
 import { drawGraph, getNodeDimension, stabilizeGraph } from './legacy/graphVisualization.js'
 import { dataVisualization } from './legacy/dataVisualization.js'
@@ -391,7 +391,7 @@ export default function App() {
   function tipOrSpinner(viz1, viz2) {
     if (viz1 === 'selected') {
       const what = viz2 === 'links' ? 'link' : 'node'
-      $('.data').append('<div class="data-item"><span> Try to select a ' + what + ' </span></div>')
+      showDataHint('Try to select a ' + what)
     } else {
       showDataSpinner()
     }
@@ -472,8 +472,7 @@ export default function App() {
         beforeSend: showDataSpinner,
         success: (data) => dataVisualization(data),
         error: () => {
-          if (s.usr !== '')
-            $('.data').html('<div class="row"><div class="col-12">Select an element in the graph</div></div>')
+          if (s.usr !== '') showDataHint('Select an element in the graph')
           else clearDataSpace()
         },
       })

@@ -11,7 +11,7 @@ import { Style, Icon } from 'ol/style'
 import { fromLonLat, transform } from 'ol/proj'
 import 'ol/ol.css'
 import { sna } from './bridge.js'
-import { clearDataSpace } from './dom.js'
+import { clearDataSpace, showDataHint } from './dom.js'
 import { dataVisualization } from './dataVisualization.js'
 
 function createWorldMap(data)
@@ -95,12 +95,7 @@ function createWorldMap(data)
                 dataVisualization (data);
             },
             error: function (data) {
-                clearDataSpace()
-                $('.data').append(
-                    '<div class="data-item">' +
-                    '<span> Try to select a place on the map </span>' +
-                    '</div>'
-                );
+                showDataHint('Try to select a place on the map')
             },
         })
         }

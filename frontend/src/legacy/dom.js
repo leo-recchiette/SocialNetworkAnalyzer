@@ -1,11 +1,15 @@
 import $ from 'jquery'
+import { createElement } from 'react'
+import { sna } from './bridge.js'
+import { Hint, Spinner, NoData } from '../components/DataPanel.jsx'
 
-// Helpers around the two imperative containers (.content and .data) that the
-// legacy visualization modules render into. React renders those divs once and
-// never touches their children.
+// Helpers around the two imperative containers (.content and .data). The .data
+// panel is React-owned (DataPanelHost): these helpers push its shared states
+// through sna.setDataPanel as real Mantine. .content is still plain jQuery (it
+// hosts the Sigma/OpenLayers/ECharts canvases).
 
 export function clearDataSpace() {
-  $('.data').html('')
+  sna.setDataPanel(null)
 }
 
 export function clearContentSpace() {
@@ -13,19 +17,13 @@ export function clearContentSpace() {
 }
 
 export function showDataSpinner() {
-  $('.data').html(
-    '<div class="row">' +
-    '<div class="col-4"></div>' +
-    '<div class="col-4">' +
-    '<div class="loading-spinner" role="status" style="margin-top:5px; margin-left: 42%"></div>' +
-    '</div>' +
-    '<div class="col-4"></div>' +
-    '</div>')
+  sna.setDataPanel(createElement(Spinner))
+}
+
+export function showDataHint(text) {
+  sna.setDataPanel(createElement(Hint, { text }))
 }
 
 export function noDataFoundVisualization() {
-  $('.data').html(
-    '<div class="noDataFound"><i class=" text-center material-icons">error</i></div>' +
-    '<div class="noDataFound">There isn’t any data that can satisfy your research</div>'
-  )
+  sna.setDataPanel(createElement(NoData))
 }

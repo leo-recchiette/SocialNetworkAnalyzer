@@ -1,882 +1,285 @@
-import $ from 'jquery'
+import { createElement } from 'react'
 import { sna } from './bridge.js'
-import { clearDataSpace, noDataFoundVisualization } from './dom.js'
+import { noDataFoundVisualization } from './dom.js'
+import { DataPanel } from '../components/DataPanel.jsx'
 
+// Builds a plain-object `model` from the server response for the current
+// (socialNetwork × graphType × dataViz2) combination and renders it as real
+// Mantine components via DataPanel. Replaces the old jQuery string-concatenated
+// markup; the fields shown per source are kept identical to the original.
+//
+// Reachability note: the data-panel tabs (MainSection.jsx) only enable
+// dataViz2='links' for relNet, and 'contacts' stays the value for map/wordFrec.
+// So the original trafficNet/map "links" branches (several referenced functions
+// that were never even defined) were dead; here links are handled for relNet
+// only and other link views fall through to "no data".
 
-function dataVisualization (data)
-{
-    let dts =  JSON.parse(sna.dataToSearch);
+function render(model) {
+  if (!model) return noDataFoundVisualization()
+  sna.setDataPanel(createElement(DataPanel, { model }))
+}
 
-    if (data.length>0)
-    {
-        clearDataSpace();
+function dataVisualization(data) {
+  const dts = JSON.parse(sna.dataToSearch)
 
-        if ('Counter' in data[0])
-            if (data[0]['Counter']==0)
-                noDataFoundVisualization();
-            else
-            {
-                if (sna.dataViz2 === 'contacts')
-                    $('.data').html(
-                        '<div class="data-item">' +
-                        '<span> Try to select a node </span>' +
-                        '</div>'
-                    );
-                else if (sna.dataViz2 === 'links')
-                    $('.data').html(
-                        '<div class="data-item">' +
-                        '<span> Try to select a link </span>' +
-                        '</div>'
-                    );
-            }
-        else
-        {
-            if (dts['sn'] === 'facebook')
-                if ( dts['dataViz2'] === 'contacts' )
-                    getFacebookContacts(data, dts['graphType']);
-                else
-                    getFacebookLinks(data, dts['graphType']);
-            else if (dts['sn'] === 'twitter')
-                if ( dts['dataViz2'] === 'contacts' )
-                    getTwitterContacts(data, dts['graphType']);
-                else
-                    getTwitterLinks(data, dts['graphType']);
-            else if (dts['sn'] === 'mbox')
-                if ( dts['dataViz2'] === 'contacts' )
-                    getMboxContacts(data, dts['graphType']);
-                else
-                    getMboxLinks(data, dts['graphType']);
-        }
-    }
-    else
-    {
-        noDataFoundVisualization();
-    }
+  if (!(data.length > 0)) return noDataFoundVisualization()
 
+  // A response carrying a Counter is the "selected" view before anything is
+  // picked: 0 means nothing matched, otherwise prompt the user to select.
+  if ('Counter' in data[0]) {
+    if (data[0]['Counter'] == 0) return noDataFoundVisualization()
+    const what = sna.dataViz2 === 'links' ? 'link' : 'node'
+    return render({ kind: 'placeholder', text: `Try to select a ${what}` })
+  }
+
+  const sn = dts['sn']
+  const gt = dts['graphType']
+  const isContacts = dts['dataViz2'] === 'contacts'
+
+  let model = null
+  if (sn === 'facebook') model = isContacts ? facebookContacts(data, gt, dts) : linksFor(data, gt)
+  else if (sn === 'twitter') model = isContacts ? twitterContacts(data, gt, dts) : linksFor(data, gt)
+  else if (sn === 'mbox') model = isContacts ? mboxContacts(data, gt, dts) : linksFor(data, gt)
+
+  render(model)
+}
+
+/* ---- shared builders ---- */
+
+// Tagged-together table (relNet links, all sources). Other link views are
+// unreachable from the UI, so they fall through to null -> "no data".
+function linksFor(data, graphType) {
+  if (graphType !== 'relNet') return null
+  return { kind: 'links', rows: data.map((d) => ({ name1: d['name_1'], name2: d['name_2'], link: d['link'] })) }
+}
+
+function wordsModel(data, dts) {
+  const dv = dts['dataViz1']
+  let title = null
+  if (dv === 'filtered') title = 'Relevant words in the selected range of time'
+  else if (dv === 'all') title = 'All time Relevant words'
+  return { kind: 'words', title, rows: data.map((d) => ({ word: d['word'], value: d['value'] })) }
 }
 
 /**********************  FACEBOOK **********************/
 
-function getFacebookContacts(data, graphType)
-{
-    if (graphType == 'relNet')
-        getFacebookContactsForRelationshipNetwork(data);
-    else if (graphType == 'trafficNet')
-        getFacebookContactsForTrafficNetwork(data);
-    else if (graphType == 'map')
-        getFacebookContactsForMap(data);
-    else
-        visualizeWords(data);
+function facebookContacts(data, graphType, dts) {
+  if (graphType === 'relNet') return facebookContactsRel(data)
+  if (graphType === 'trafficNet') return facebookContactsTraffic(data)
+  if (graphType === 'map') return facebookContactsMap(data)
+  return wordsModel(data, dts)
 }
 
-function getFacebookContactsForRelationshipNetwork(data)
-{
-    for (let i = 0 ;i<data.length; i++)
-    {
-        $('.data').append(
-            '<div class="data-item data-item-'+ i +'">' +
-            '<span class=\'dataKey\'>Name: </span>' +
-            '<span class=\'dataValue\'>' + data[i]['node']['name'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Node degree: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' +  data[i]['node']['nodeDegree'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Tagged together count: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' +  data[i]['taggedTogetherValue'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Dump profile: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' +  data[i]['propertyDump'] + '</span>' +
-            '<br>' +
-            '</div>'
-        );
+function facebookContactsRel(data) {
+  const records = data.map((d) => {
+    const n = d['node']
+    const fields = [
+      { label: 'Name', value: n['name'] },
+      { label: 'Node degree', value: n['nodeDegree'], mono: true },
+      { label: 'Tagged together count', value: d['taggedTogetherValue'], mono: true },
+      { label: 'Dump profile', value: d['propertyDump'] },
+    ]
+    if ('removed_timestamp' in n) fields.push({ label: 'Removed timestamp', value: n['removed_timestamp'], mono: true })
+    else fields.push({ label: 'Timestamp', value: n['timestamp'], mono: true })
 
-        if ('removed_timestamp' in data[i]['node'])
-            $('.data-item-'+i).append(
-                '<span class=\'dataKey\'>Removed timestamp: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' +  data[i]['node']['removed_timestamp'] + '</span>' +
-                '<br>'
-            )
-        else
-            $('.data-item-'+i).append(
-                '<span class=\'dataKey\'>Timestamp: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' +  data[i]['node']['timestamp'] + '</span>' +
-                '<br>'
-            )
+    const lists = []
+    if ('phoneContacts' in n) lists.push({ label: 'Contacts', items: n['phoneContacts'] })
+    return { fields, lists }
+  })
 
-        if ('phoneContacts' in data[i]['node'])
-        {
-            $('.data-item-'+i).append(
-                '<span class=\'dataKey\'>Contacts: </span>' +
-                '<span class="dataValue phoneNumber-'+i+'"> </span>'
-            )
+  // taggedWith comes from data[0] in the original; show it on the first record.
+  if (records[0] && 'taggedWith' in data[0] && data[0]['taggedWith'].length > 0)
+    records[0].spoiler = { label: 'click to show people tagged in this content', items: data[0]['taggedWith'] }
 
-            for (let index = 0 ; index< data[i]['node']['phoneContacts'].length; index++)
-                $('.phoneNumber-'+i).append(
-                    data[i]['node']['phoneContacts'][index] + '<br> ');
-        }
+  return { kind: 'records', records }
+}
 
-        if ('taggedWith' in data[0])
-            if (data[0]['taggedWith'].length > 0)
-            {
-                $('.data-item').append(
-                    '<div class="spoiler-btn">click to show/hide people tagged in this content </div>' +
-                    '<div class="spoiler-body"></div>' +
-                    '</div>'
-                )
-
-                for (let i = 0; i < data[0]['taggedWith'].length; i++) {
-                    $('.spoiler-body').append(
-                        '<div class="istaggedWith">' + data[0]['taggedWith'][i] + '</div>'
-                    )
-                }
-            }
-
-        if (i< data.length - 1 )
-            $('.data').append('<hr>');
+function facebookContactsTraffic(data) {
+  if (sna.dataViz1 === 'selected') {
+    if ('node' in data[0]) {
+      const d = data[0]
+      const n = d['node']
+      const rec = {
+        fields: [
+          { label: 'Content', value: n['content'] },
+          { label: 'Node degree', value: d['nodeDegree'], mono: true },
+          { label: 'Timestamp', value: n['timestamp'], mono: true },
+          { label: 'Dump profile', value: d['propertyDump'] },
+        ],
+      }
+      if (d['taggedWith'] && d['taggedWith'].length > 0)
+        rec.spoiler = { label: 'click to show people tagged in this content', items: d['taggedWith'] }
+      return { kind: 'records', records: [rec] }
     }
-}
-
-function getFacebookContactsForTrafficNetwork(data)
-{
-    let dv = sna.dataViz1;
-
-    if (dv ==='selected')
-    {
-        if ('node' in data[0])
-        {
-            $('.data').html(
-                '<div class="data-item">' +
-                '<span class=\'dataKey\'>Content: </span>' +
-                '<span class=\'dataValue\'>' + data[0]['node']['content'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Node degree: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' +  data[0]['nodeDegree'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Timestamp: </span>' +
-                '<span class=\'dataValue\'>' + data[0]['node']['timestamp'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Dump profile: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' +  data[0]['propertyDump'] + '</span>' +
-                '<br>' +
-                '</div>'
-            );
-
-            if (data[0]['taggedWith'].length > 0 )
-            {
-                $('.data-item').append(
-                    '<div class="spoiler-btn">click to show/hide people tagged in this content </div>' +
-                    '<div class="spoiler-body"></div>' +
-                    '</div>'
-                )
-
-                for (let i = 0; i < data[0]['taggedWith'].length; i++) {
-                    $('.spoiler-body').append(
-                        '<div class="istaggedWith">' + data[0]['taggedWith'][i] + '</div>'
-                    )
-                }
-            }
-        }
-        else if ('StartOfConversation' in data[0])
-        {
-            $('.data').html(
-                '<div class="data-item">' +
-                '<span class=\'dataKey\'>Participants: </span>' +
-                '<span class=\'dataValue participants\'></span>' +
-                '<span class=\'dataKey\'>Dump profile: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' +  data[0]['propertyDump'] + '</span>' +
-                '<br>' +
-                '</div>'
-            )
-
-            for (let i = 0 ; i< data[0]['StartOfConversation']['participants'].length; i++)
-                $('.participants').append(
-                    data[0]['StartOfConversation']['participants'][i] + '<br> ');
-
-            $('.data-item').append(
-                '<span class=\'dataKey\'>Node degree: </span>' +
-                '<span class=\'dataValue\'>' + data[0]['StartOfConversation']['nodeDegree'] + '</span>' +
-                '<br>'
-            )
-
-            $('.data').append('<hr>');
-
-
-            for (let i=0 ; i<data.length ; i++)
-            {
-                if ( i == 0 )
-                {
-                    $('.data').append(
-                        '<div class="data-item">' +
-                        '<span class=\'dataKey\'>Sender: </span>' +
-                        '<span class=\'dataValue\'>' + data[0]['StartOfConversation']['sender'] + '</span>' +
-                        '<br>' +
-                        '<span class=\'dataKey\'>Timestamp: </span>' +
-                        '<span class=\'dataValue\'>' + data[0]['StartOfConversation']['timestamp'] + '</span>' +
-                        '<br>' +
-                        '<span class=\'dataKey\'>Content: </span>' +
-                        '<span class=\'dataValue\'>' + data[0]['StartOfConversation']['content'] + '</span>' +
-                        '<br>' +
-                        '</div>'
-                    )
-                }
-                else
-                {
-                    $('.data').append(
-                        '<hr>' +
-                        '<div class="data-item">' +
-                        '<span class=\'dataKey\'>Sender: </span>' +
-                        '<span class=\'dataValue\'>' + data[i]['Replay']['sender'] + '</span>' +
-                        '<br>' +
-                        '<span class=\'dataKey\'>Timestamp: </span>' +
-                        '<span class=\'dataValue\'>' + data[i]['Replay']['timestamp'] + '</span>' +
-                        '<br>' +
-                        '<span class=\'dataKey\'>Content: </span>' +
-                        '<span class=\'dataValue\'>' + data[i]['Replay']['content'] + '</span>' +
-                        '<br>' +
-                        '</div>'
-                    )
-                }
-            }
-        }
+    if ('StartOfConversation' in data[0]) {
+      const soc = data[0]['StartOfConversation']
+      const records = [{
+        lists: [{ label: 'Participants', items: soc['participants'] }],
+        fields: [
+          { label: 'Dump profile', value: data[0]['propertyDump'] },
+          { label: 'Node degree', value: soc['nodeDegree'], mono: true },
+        ],
+      }]
+      // the conversation thread: start message, then each reply
+      records.push({
+        fields: [
+          { label: 'Sender', value: soc['sender'] },
+          { label: 'Timestamp', value: soc['timestamp'], mono: true },
+          { label: 'Content', value: soc['content'] },
+        ],
+      })
+      for (let i = 1; i < data.length; i++) {
+        const r = data[i]['Replay']
+        records.push({
+          fields: [
+            { label: 'Sender', value: r['sender'] },
+            { label: 'Timestamp', value: r['timestamp'], mono: true },
+            { label: 'Content', value: r['content'] },
+          ],
+        })
+      }
+      return { kind: 'records', records }
     }
-    else
-    {
-        for (let i = 0 ; i < data.length ; i++)
-        {
-            $('.data').append(
-                '<div class="data-item-'+ i +'">' +
-                '<span class=\'dataKey\'>Content: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['node']['content'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Node degree: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' +  data[i]['node']['nodeDegree'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Timestamp: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['node']['timestamp'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Dump profile: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' +  data[i]['propertyDump'] + '</span>' +
-                '<br>' +
-                '</div>'
-            );
+    return null
+  }
 
-            if ('participants' in data[i]['node'])
-            {
-                $('.data-item-'+i).append(
-                    '<div class="data-item-'+ i +'">' +
-                    '<span class=\'dataKey\'>Participants: </span>' +
-                    '<span class="dataValue participants-'+i+'"></span>' +
-
-                    '</div>'
-                )
-
-                for (let j = 0 ; j< data[i]['node']['participants'].length; j++)
-                    $('.participants-'+i).append(
-                        data[i]['node']['participants'][j] + '<br> ');
-            }
-            if (data[i]['taggedWith'].length > 0 )
-            {
-                $('.data-item-'+i).append(
-                    '<div class="spoiler-btn">click to show/hide people tagged in this content </div>' +
-                    '<div class="spoiler-body spoiler-body-'+i+'"></div>' +
-                    '</div>'
-                )
-
-                for (let j = 0; j < data[i]['taggedWith'].length; j++) {
-                    $('.spoiler-body-'+i).append(
-                        '<div class="istaggedWith">' + data[i]['taggedWith'][j] + '</div>'
-                    )
-                }
-            }
-
-            if (i< data.length - 1 )
-                $('.data').append('<hr>');
-        }
+  // filtered / all
+  const records = data.map((d) => {
+    const n = d['node']
+    const rec = {
+      fields: [
+        { label: 'Content', value: n['content'] },
+        { label: 'Node degree', value: n['nodeDegree'], mono: true },
+        { label: 'Timestamp', value: n['timestamp'], mono: true },
+        { label: 'Dump profile', value: d['propertyDump'] },
+      ],
+      lists: [],
     }
-
+    if ('participants' in n) rec.lists.push({ label: 'Participants', items: n['participants'] })
+    if (d['taggedWith'] && d['taggedWith'].length > 0)
+      rec.spoiler = { label: 'click to show people tagged in this content', items: d['taggedWith'] }
+    return rec
+  })
+  return { kind: 'records', records }
 }
 
-function getFacebookContactsForMap(data) {
-    for (let i = 0 ; i< data.length ; i++ )
-    {
-        if ( 'content' in data[i]['place'] )
-        {
-            $('.data').append(
-                '<div class="data-item">' +
-                '<span class=\'dataKey\'>Content: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['place']['content'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Node degree: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' +  data[i]['place']['nodeDegree'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Timestamp: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['place']['timestamp'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Place name: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['place']['place_name'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Dump profile: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' +  data[0]['propertyDump'] + '</span>' +
-                '<br>' +
-                '</div>'
-            );
-        }
-        else
-        {
-            $('.data').append(
-                '<div class="data-item data-item-'+ i +'">' +
-                '<span class=\'dataKey\'>Name: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['place']['name'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Latitude: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['place']['place_latitude'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Longitude: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['place']['place_longitude'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Timestamp: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' +  data[i]['place']['timestamp'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Dump profile: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' +  data[0]['propertyDump'] + '</span>' +
-                '<br>' +
-                '</div>'
-            );
-        }
-
-        if (i< data.length - 1 )
-            $('.data').append('<hr>');
+function facebookContactsMap(data) {
+  const records = data.map((d) => {
+    const p = d['place']
+    if ('content' in p) {
+      return {
+        fields: [
+          { label: 'Content', value: p['content'] },
+          { label: 'Node degree', value: p['nodeDegree'], mono: true },
+          { label: 'Timestamp', value: p['timestamp'], mono: true },
+          { label: 'Place name', value: p['place_name'] },
+          { label: 'Dump profile', value: data[0]['propertyDump'] },
+        ],
+      }
     }
-}
-
-function getFacebookLinks(data, graphType)
-{
-    if (graphType == 'relNet')
-        getFacebookLinksForRelationshipNetwork(data);
-    else if (graphType == 'trafficNet')
-        getFacebookLinksForTrafficNetwork(data);
-    else if (graphType == 'map')
-        getFacebookLinksForMap(data);
-    else
-    {}
-}
-
-function getFacebookLinksForRelationshipNetwork(data)
-{
-    $('.data').html(
-        '<div class="row">' +
-        '<div class="col-4"></div>' +
-        '<div class="col-4"></div>' +
-        '<div class="col-4" ><b>Tagged together</b></div>' +
-        '</div>'
-
-    )
-
-    for (let i=0 ; i < data.length; i++)
-    {
-        $('.data').append(
-            '<div class="row data-item data-item'+ i +'">' +
-
-            '<div class="col-4" style="word-wrap: break-word;">'+data[i]['name_1']+'</div>' +
-            '<div class="col-4" style="word-wrap: break-word;">'+data[i]['name_2']+'</div>' +
-            '<div class="col-4" style="word-wrap: break-word;"><b>'+data[i]['link']+'</b></div>' +
-            '</div>'
-        );
-
-        if (i< data.length - 1 )
-            $('.data').append('<hr>');
+    return {
+      fields: [
+        { label: 'Name', value: p['name'] },
+        { label: 'Latitude', value: p['place_latitude'], mono: true },
+        { label: 'Longitude', value: p['place_longitude'], mono: true },
+        { label: 'Timestamp', value: p['timestamp'], mono: true },
+        { label: 'Dump profile', value: data[0]['propertyDump'] },
+      ],
     }
-}
-
-function getFacebookLinksForMap(data)
-{
-
-    console.log(data);
-    $('.data').html(
-        '<div class="data-item">' + data[0]['place'] + '</div>'
-    );
+  })
+  return { kind: 'records', records }
 }
 
 /**********************  TWITTER  **********************/
 
-function getTwitterContacts(data, graphType)
-{
-    if (graphType == 'relNet')
-        getTwitterContactsForRelationshipNetwork(data);
-    else if (graphType == 'trafficNet')
-        getTwitterContactsForTrafficNetwork(data);
-    else if (graphType == 'map')
-        getTwitterContactsForMap(data)
-    else
-        visualizeWords(data);
+function twitterContacts(data, graphType, dts) {
+  if (graphType === 'relNet') return twitterContactsRel(data)
+  if (graphType === 'trafficNet') return twitterContactsTraffic(data)
+  if (graphType === 'map') return twitterContactsMap(data)
+  return wordsModel(data, dts)
 }
 
-function getTwitterContactsForRelationshipNetwork(data)
-{
-    for (let i = 0 ; i< data.length ;i ++)
-    {
-        $('.data').append(
-            '<div class="data-item data-item-'+ i +'">' +
-            '<span class=\'dataKey\'>Name: </span>' +
-            '<span class=\'dataValue\'>' + data[i]['node']['name'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Account name: </span>' +
-            '<span class=\'dataValue\'>' + data[i]['node']['screen_name'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Twitter profile: </span>' +
-            '<a class=\'dataValue\'><a href="'+data[i]['node']['user_link']+'" target="_blank">link</a></span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Node degree: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' +  data[i]['node']['nodeDegree'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Tagged together count: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' +  data[i]['taggedTogetherValue'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Dump profile: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' +  data[i]['propertyDump'] + '</span>' +
-            '<br>' +
-            '</div>'
-        );
-
-        if ('taggedWith' in data[0] )
-            if (data[0]['taggedWith'].length > 0 )
-            {
-                $('.data-item').append(
-                    '<div class="spoiler-btn">click to show/hide people tagged in this tweet </div>' +
-                    '<div class="spoiler-body"></div>' +
-                    '</div>'
-                )
-
-                for (let i = 0; i < data[0]['taggedWith'].length; i++) {
-                    $('.spoiler-body').append(
-                        '<div class="istaggedWith">' + data[0]['taggedWith'][i] + '</div>'
-                    )
-                }
-            }
-
-        if (i< data.length - 1 )
-            $('.data').append('<hr>');
+function twitterContactsRel(data) {
+  const records = data.map((d) => {
+    const n = d['node']
+    return {
+      fields: [
+        { label: 'Name', value: n['name'] },
+        { label: 'Account name', value: n['screen_name'] },
+        { label: 'Twitter profile', href: n['user_link'] },
+        { label: 'Node degree', value: n['nodeDegree'], mono: true },
+        { label: 'Tagged together count', value: d['taggedTogetherValue'], mono: true },
+        { label: 'Dump profile', value: d['propertyDump'] },
+      ],
     }
+  })
+  if (records[0] && 'taggedWith' in data[0] && data[0]['taggedWith'].length > 0)
+    records[0].spoiler = { label: 'click to show people tagged in this tweet', items: data[0]['taggedWith'] }
+  return { kind: 'records', records }
 }
 
-function getTwitterContactsForTrafficNetwork(data)
-{
-    for (let i = 0 ;i < data.length; i++) {
-        $('.data').append(
-            '<div class="data-item-'+i+'">' +
-            '<span class=\'dataKey\'>Content: </span>' +
-            '<span class=\'dataValue\'>' + data[i]['node']['full_text'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Timestamp: </span>' +
-            '<span class=\'dataValue\'>' + data[i]['node']['created_at'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Node degree: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' + data[i]['nodeDegree'] + '</a></span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Dump profile: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' + data[i]['propertyDump'] + '</span>' +
-            '<br>' +
-            '</div>'
-        );
-
-        if (data[i]['node']['hashtags_text'] !== '')
-            $('.data-item-'+i).append(
-                '<span class=\'dataKey\'>Hashtags text: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' + data[i]['node']['hashtags_text'] + '</span>' +
-                '<br>'
-            )
-
-        if (data[i]['taggedWith'].length > 0) {
-            $('.data-item-'+i).append(
-                '<div class="spoiler-btn">click to show/hide people tagged in this tweet </div>' +
-                '<div class="spoiler-body spoiler-body-'+i+'"></div>' +
-                '</div>'
-            )
-
-            for (let j = 0; j < data[i]['taggedWith'].length; j++) {
-                $('.spoiler-body-'+i).append(
-                    '<div class="istaggedWith">' + data[i]['taggedWith'][j] + '</div>'
-                )
-            }
-        }
-
-        if (i< data.length - 1 )
-            $('.data').append('<hr>');
+function twitterContactsTraffic(data) {
+  const records = data.map((d) => {
+    const n = d['node']
+    const rec = {
+      fields: [
+        { label: 'Content', value: n['full_text'] },
+        { label: 'Timestamp', value: n['created_at'], mono: true },
+        { label: 'Node degree', value: d['nodeDegree'], mono: true },
+        { label: 'Dump profile', value: d['propertyDump'] },
+      ],
     }
+    if (n['hashtags_text'] !== '') rec.fields.push({ label: 'Hashtags text', value: n['hashtags_text'] })
+    if (d['taggedWith'] && d['taggedWith'].length > 0)
+      rec.spoiler = { label: 'click to show people tagged in this tweet', items: d['taggedWith'] }
+    return rec
+  })
+  return { kind: 'records', records }
 }
 
-function getTwitterContactsForMap(data)
-{
-    for (let i = 0 ; i < data.length; i++)
-    {
-        $('.data').append(
-            '<div class="data-item-'+i+'">' +
-            '<span class=\'dataKey\'>Content: </span>' +
-            '<span class=\'dataValue\'>' + data[i]['place']['full_text'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Timestamp: </span>' +
-            '<span class=\'dataValue\'>' + data[i]['place']['created_at'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Latitude: </span>' +
-            '<span class=\'dataValue\'>' + data[i]['place']['latitude'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Longitude: </span>' +
-            '<span class=\'dataValue\'>' + data[i]['place']['longitude'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Retweet count: </span>' +
-            '<span class=\'dataValue\'>' + data[i]['place']['retweet_count'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Node degree: </span>' +
-            '<span class=\'dataValue\'>' + data[i]['place']['nodeDegree'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Dump profile: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' +  data[i]['propertyDump'] + '</span>' +
-            '<br>' +
-            '</div>'
-        );
-
-        if ('url' in data[i]['place'])
-            $('.data-item-'+i).append(
-                '<span class=\'dataKey\'>External content: </span>' +
-                '<span class=\'dataValue\'><a href=\'' + data[i]['place']['url'] + '\' target="_blank">link</a></span>' +
-                '<br>'
-            );
-
-        if ('hashtags_text' in data[i]['place'] && data[i]['place']['hashtags_text'] !=='#')
-            $('.data-item-'+i).append(
-                '<span class=\'dataKey\'>Hashtags: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['place']['hashtags_text'] + '</span>' +
-                '<br>'
-            )
-
-
-
-        if (i< data.length - 1 )
-            $('.data').append('<hr>');
-    }
-
+function twitterContactsMap(data) {
+  const records = data.map((d) => {
+    const p = d['place']
+    const fields = [
+      { label: 'Content', value: p['full_text'] },
+      { label: 'Timestamp', value: p['created_at'], mono: true },
+      { label: 'Latitude', value: p['latitude'], mono: true },
+      { label: 'Longitude', value: p['longitude'], mono: true },
+      { label: 'Retweet count', value: p['retweet_count'], mono: true },
+      { label: 'Node degree', value: p['nodeDegree'], mono: true },
+      { label: 'Dump profile', value: d['propertyDump'] },
+    ]
+    if ('url' in p) fields.push({ label: 'External content', href: p['url'] })
+    if ('hashtags_text' in p && p['hashtags_text'] !== '#') fields.push({ label: 'Hashtags', value: p['hashtags_text'] })
+    return { fields }
+  })
+  return { kind: 'records', records }
 }
-
-function getTwitterLinks(data, graphType)
-{
-    if (graphType == 'relNet')
-        getTwitterLinksForRelationshipNetwork(data);
-    else if (graphType == 'trafficNet')
-        getTwitterLinksForTrafficNetwork(data);
-    else if (graphType == 'map')
-        getTwitterkLinksForMap(data);
-    else
-    {}
-}
-
-function getTwitterLinksForRelationshipNetwork(data)
-{
-    $('.data').html(
-        '<div class="row">' +
-        '<div class="col-4"></div>' +
-        '<div class="col-4"></div>' +
-        '<div class="col-4" ><b>Tagged together</b></div>' +
-        '</div>'
-
-    )
-
-    for (let i=0 ; i < data.length; i++)
-    {
-        $('.data').append(
-            '<div class="row data-item data-item'+ i +'">' +
-
-            '<div class="col-4" style="word-wrap: break-word;">'+data[i]['name_1']+'</div>' +
-            '<div class="col-4" style="word-wrap: break-word;">'+data[i]['name_2']+'</div>' +
-            '<div class="col-4" style="word-wrap: break-word;"><b>'+data[i]['link']+'</b></div>' +
-            '</div>'
-        );
-
-        if (i< data.length - 1 )
-            $('.data').append('<hr>');
-    }
-}
-
 
 /**********************  MBOX  **********************/
 
-function getMboxContacts(data, graphType)
-{
-    if (graphType == 'relNet')
-        getMboxContactsForRelationshipNetwork(data);
-    else if (graphType == 'trafficNet')
-        getMboxContactsForTrafficNetwork(data);
-    else if (graphType == 'map')
-        getMboxContactsForMap(data)
-    else
-        visualizeWords(data);
+function mboxContacts(data, graphType, dts) {
+  // relNet and trafficNet render identically in the original.
+  if (graphType === 'relNet' || graphType === 'trafficNet') return mboxContactsNet(data)
+  if (graphType === 'map') return null
+  return wordsModel(data, dts)
 }
 
-function getMboxContactsForRelationshipNetwork(data)
-{
-    for (let i = 0 ; i< data.length ;i ++)
-    {
-        $('.data').append(
-            '<div class="data-item data-item-'+ i +'">' +
-            '<span class=\'dataKey\'>Name: </span>' +
-            '<span class=\'dataValue\'>' + data[i]['node']['label'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Node degree: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' +  data[i]['node']['nodeDegree'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Tagged together count: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' +  data[i]['taggedTogetherValue'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Dump profile: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' +  data[0]['node']['userProfileProperty'] + '</span>' +
-            '<br>' +
-            '</div>'
-        );
-
-        if ('taggedWith' in data[0] )
-            if (data[0]['taggedWith'].length > 0 )
-            {
-                $('.data-item').append(
-                    '<div class="spoiler-btn">click to show/hide people tagged whit this person </div>' +
-                    '<div class="spoiler-body"></div>' +
-                    '</div>'
-                )
-
-                for (let i = 0; i < data[0]['taggedWith'].length; i++) {
-                    $('.spoiler-body').append(
-                        '<div class="istaggedWith">' + data[0]['taggedWith'][i] + '</div>'
-                    )
-                }
-            }
-
-        if (i< data.length - 1 )
-            $('.data').append('<hr>');
+function mboxContactsNet(data) {
+  const records = data.map((d) => {
+    const n = d['node']
+    return {
+      fields: [
+        { label: 'Name', value: n['label'] },
+        { label: 'Node degree', value: n['nodeDegree'], mono: true },
+        { label: 'Tagged together count', value: d['taggedTogetherValue'], mono: true },
+        { label: 'Dump profile', value: data[0]['node']['userProfileProperty'] },
+      ],
     }
+  })
+  if (records[0] && 'taggedWith' in data[0] && data[0]['taggedWith'].length > 0)
+    records[0].spoiler = { label: 'click to show people tagged whit this person', items: data[0]['taggedWith'] }
+  return { kind: 'records', records }
 }
 
-function getMboxContactsForTrafficNetwork(data)
-{
-    for (let i = 0 ; i< data.length ;i ++)
-    {
-        $('.data').append(
-            '<div class="data-item data-item-'+ i +'">' +
-            '<span class=\'dataKey\'>Name: </span>' +
-            '<span class=\'dataValue\'>' + data[i]['node']['label'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Node degree: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' +  data[i]['node']['nodeDegree'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Tagged together count: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' +  data[i]['taggedTogetherValue'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Dump profile: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' +  data[0]['node']['userProfileProperty'] + '</span>' +
-            '<br>' +
-            '</div>'
-        );
-
-        if ('taggedWith' in data[0] )
-            if (data[0]['taggedWith'].length > 0 )
-            {
-                $('.data-item').append(
-                    '<div class="spoiler-btn">click to show/hide people tagged whit this person </div>' +
-                    '<div class="spoiler-body"></div>' +
-                    '</div>'
-                )
-
-                for (let i = 0; i < data[0]['taggedWith'].length; i++) {
-                    $('.spoiler-body').append(
-                        '<div class="istaggedWith">' + data[0]['taggedWith'][i] + '</div>'
-                    )
-                }
-            }
-
-        if (i< data.length - 1 )
-            $('.data').append('<hr>');
-    }
-}
-
-function getMboxLinks(data, graphType)
-{
-    if (graphType == 'relNet')
-        getMboxLinksForRelationshipNetwork(data);
-    else if (graphType == 'trafficNet')
-        getMboxLinksForTrafficNetwork(data);
-    else if (graphType == 'map')
-        getMboxLinksForMap(data)
-    else
-    {}
-}
-
-function getMboxLinksForRelationshipNetwork(data)
-{
-    $('.data').html(
-        '<div class="row">' +
-        '<div class="col-4"></div>' +
-        '<div class="col-4"></div>' +
-        '<div class="col-4" ><b>Tagged together</b></div>' +
-        '</div>'
-
-    )
-
-    for (let i=0 ; i < data.length; i++)
-    {
-        $('.data').append(
-            '<div class="row data-item data-item'+ i +'">' +
-
-            '<div class="col-4" style="word-wrap: break-word;">'+data[i]['name_1']+'</div>' +
-            '<div class="col-4" style="word-wrap: break-word;">'+data[i]['name_2']+'</div>' +
-            '<div class="col-4" style="word-wrap: break-word;"><b>'+data[i]['link']+'</b></div>' +
-            '</div>'
-        );
-
-        if (i< data.length - 1 )
-            $('.data').append('<hr>');
-    }
-}
-
-function getMboxLinksForTrafficNetwork(data)
-{
-    $('.data').html(
-        '<div class="row">' +
-        '<div class="col-4"></div>' +
-        '<div class="col-4"></div>' +
-        '<div class="col-4" ><b>Tagged together</b></div>' +
-        '</div>'
-
-    )
-
-    for (let i=0 ; i < data.length; i++)
-    {
-        $('.data').append(
-            '<div class="row data-item data-item'+ i +'">' +
-
-            '<div class="col-4" style="word-wrap: break-word;">'+data[i]['name_1']+'</div>' +
-            '<div class="col-4" style="word-wrap: break-word;">'+data[i]['name_2']+'</div>' +
-            '<div class="col-4" style="word-wrap: break-word;"><b>'+data[i]['link']+'</b></div>' +
-            '</div>'
-        );
-
-        if (i< data.length - 1 )
-            $('.data').append('<hr>');
-    }
-}
-
-/**********************  ALL  **********************/
-
-function visualizeSingleWord(data, sn, word)
-{
-    $('.data').append('<p>The word <b>\"'+word+'\"</b> is present in this content in the selected range of time:</p>');
-
-    if (sn === 'facebook')
-        for (let i=0 ; i<data.length ; i++) {
-            $('.data').append(
-                '<div class="data-item-'+ i +'">' +
-                '<span class=\'dataKey\'>Content: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['node']['content'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Node degree: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' + data[i]['node']['nodeDegree'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Timestamp: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['node']['timestamp'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Dump profile: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' + data[i]['propertyDump'] + '</span>' +
-                '<br>' +
-                '</div>'
-            );
-
-            if (i< data.length - 1 )
-                $('.data').append('<hr>');
-        }
-    else if (sn === 'twitter')
-        for  (let i=0 ; i<data.length ; i++)
-        {
-            $('.data').append(
-                '<div class="data-item-'+ i +'">' +
-                '<span class=\'dataKey\'>Content: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['node']['full_text'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Node degree: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' + data[i]['node']['nodeDegree'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Timestamp: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['node']['created_at'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Dump profile: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' + data[i]['propertyDump'] + '</span>' +
-                '<br>' +
-                '</div>'
-            );
-
-            if (i< data.length - 1 )
-                $('.data').append('<hr>');
-        }
-    else
-        for  (let i=0 ; i<data.length ; i++)
-        {
-            $('.data').append(
-                '<div class="data-item-'+ i +'">' +
-                '<span class=\'dataKey\'>Sender: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['node']['sender'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>To: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' + data[i]['node']['to'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Timestamp: </span>' +
-                '<span class=\'dataValue\'>' + data[i]['node']['time'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Subject: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' + data[i]['node']['subject'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Content: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' + data[i]['node']['content'] + '</span>' +
-                '<br>' +
-                '<span class=\'dataKey\'>Dump profile: </span>' +
-                '<span class=\'dataValue nodeDegree\'>' + data[i]['propertyDump'] + '</span>' +
-                '<br>' +
-                '</div>'
-            );
-
-            if (i< data.length - 1 )
-                $('.data').append('<hr>');
-        }
-}
-
-function visualizeWords(data)
-{
-    clearDataSpace();
-
-    let dts = JSON.parse(sna.dataToSearch);
-
-    let dv = dts['dataViz1'];
-
-    sna.dataToSearch = JSON.stringify(dts);
-
-    if (dv === 'filtered')
-        $('.data').append(
-            '<div class="data-item"><b> Relevant words in the selected range of time</b></div><br>'
-        )
-    else if (dv === 'all')
-        $('.data').append(
-            '<div class="data-item"><b> All time Relevant words</b></div><br>'
-        )
-
-    for (let i = 0 ; i< data.length ;i ++)
-    {
-        $('.data').append(
-            '<div class="data-item data-item-'+ i +'">' +
-            '<span class=\'dataKey\'>Word: </span>' +
-            '<span class=\'dataValue\'>' + data[i]['word'] + '</span>' +
-            '<br>' +
-            '<span class=\'dataKey\'>Value: </span>' +
-            '<span class=\'dataValue nodeDegree\'>' +  data[i]['value'] + '%</span>' +
-            '<br>' +
-            '</div>'
-        );
-
-        if (i< data.length - 1 )
-            $('.data').append('<hr>');
-    }
-}
-export { dataVisualization, visualizeSingleWord }
+export { dataVisualization }

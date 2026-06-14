@@ -4,7 +4,7 @@ import forceAtlas2 from 'graphology-layout-forceatlas2'
 import FA2Layout from 'graphology-layout-forceatlas2/worker'
 import circular from 'graphology-layout/circular'
 import { sna } from './bridge.js'
-import { clearDataSpace } from './dom.js'
+import { clearDataSpace, showDataHint } from './dom.js'
 import { dataVisualization } from './dataVisualization.js'
 import { toGraphology } from './graphAdapter.js'
 
@@ -66,18 +66,7 @@ function handleSelect(id, kind) {
       dataVisualization(data)
     },
     error: function () {
-      if (kind === 'contacts')
-        $('.data').append(
-          '<div class="data-item">' +
-            '<span> Try to select a node </span>' +
-          '</div>'
-        )
-      else
-        $('.data').append(
-          '<div class="data-item">' +
-          '<span> Try to select a link </span>' +
-          '</div>'
-        )
+      showDataHint(kind === 'contacts' ? 'Try to select a node' : 'Try to select a link')
     },
   })
 }
